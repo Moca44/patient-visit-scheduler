@@ -149,7 +149,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
     <div id="lErr" class="fe"></div>
     <button class="bp" id="btnLogin">כניסה</button>
     <div style="text-align:center;margin-top:7px"><button class="bl" id="btnForgot">שחכתי סיסמא</button></div>
-    <p style="text-align:center;margin-top:12px;font-size:10px;color:var(--txt3);letter-spacing:.05em">v24 — DEBUG</p>
+    <p id="versionStr" style="text-align:center;margin-top:12px;font-size:10px;color:var(--txt3);letter-spacing:.05em;display:none"></p>
   </div>
 </div>
 
@@ -267,7 +267,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 <div id="vAdmin" class="vw">
   <div class="hband"><div class="tbar">
     <div><p class="ht" id="adminTitle">ניהול</p><p class="hs">לוח בקרה</p></div>
-    <div style="display:flex;align-items:center;gap:6px"><span class="lock-dot" id="adminLockDot"></span><button class="bg2btn" id="btnAdminOut" style="color:#CCC9F8">יציאה</button></div>
+    <div style="display:flex;align-items:center;gap:6px"><span class="lock-dot" id="adminLockDot"></span><button class="bg2btn" id="btnDebugToggle" style="color:#CCC9F8;display:none;font-size:10px;opacity:.6">DEBUG</button><button class="bg2btn" id="btnAdminOut" style="color:#CCC9F8">יציאה</button></div>
   </div></div>
   <div class="nav">
     <button class="ntab on" id="tab0">לוח בקרה</button>
@@ -291,7 +291,22 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         <div class="sc"><p class="sn" id="aWfu">0</p><p class="sl3">מלאים</p></div>
         <div class="sc"><p class="sn" id="aWwl">0</p><p class="sl3">עם המתנה</p></div>
       </div>
-      <p class="sl" style="margin-top:.4rem">פעילות אחרונה</p><div id="aRecent"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem">
+        <p class="sl" style="margin:0">פעילות אחרונה</p>
+        <button class="bsm gh" id="btnShowLog" style="font-size:11px">הצג לוג</button>
+      </div>
+      <div id="logPanel" style="display:none;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--bg2);border:1px solid var(--brd);border-radius:8px;padding:7px 10px">
+          <span style="font-size:11px;color:var(--txt3)">רשומות לעמוד:</span>
+          <button class="cb2" id="btnLogMinus">−</button>
+          <span id="logPerPage" style="font-size:13px;font-weight:500;min-width:20px;text-align:center">10</span>
+          <button class="cb2" id="btnLogPlus">+</button>
+        </div>
+        <div id="aRecent"></div>
+        <div id="logNextWrap" style="display:none;margin-top:6px">
+          <button class="bs" id="btnLogNext" style="margin-top:0;font-size:12px;padding:7px">המשך ›</button>
+        </div>
+      </div>
     </div>
     <div id="tp1" style="display:none">
       <p class="sl" id="calHdr"></p>
@@ -385,7 +400,34 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         <button class="bp" id="btnSaveNewUser">צור משתמש</button>
         <button class="bs" id="btnNewUserCancel">ביטול</button>
       </div>
-      <!-- edit panel — shown when admin taps a user -->
+      <!-- SA edit panel -->
+      <div id="aSAEditPanel" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:.9rem">
+          <button class="bsm gh" id="btnSAEditBack">← חזרה</button>
+          <p class="sl" style="margin:0">עריכת מנהל ראשי</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:.9rem">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--pur3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--pur);flex-shrink:0" id="saAvi"></div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--txt)" id="saNameDisplay"></div><div style="font-size:11px;color:var(--txt3)">מנהל ראשי · <span id="saEmailDisplay"></span></div></div>
+        </div>
+        <div class="fg"><label class="lbl">שם מלא</label><input id="saName" type="text" class="fi"/><div id="saNameErr" class="fe">שם מלא נדרש</div></div>
+        <div class="fg"><label class="lbl">טלפון</label><input id="saPhone" type="tel" class="fi" dir="ltr" style="text-align:right" placeholder="050-0000000"/></div>
+        <div class="nt" style="margin-top:4px">שינוי שם לא מאפס סיסמא. בכניסה הבאה יש להשתמש בשם החדש והסיסמא הקיימת.</div>
+        <div id="saFlash" class="fl2 ok" style="margin-bottom:8px"></div>
+        <button class="bp" id="btnSASave">שמור שינויים</button>
+        <button class="bs" id="btnSAResetPw" style="margin-top:6px">איפוס סיסמא</button>
+        <!-- debug only -->
+        <div id="saDebugZone" style="display:none">
+          <div class="sep"></div>
+          <p class="sl" style="color:var(--red)">אזור DEBUG בלבד</p>
+          <button class="bd" id="btnResetDB" style="margin-top:0">🗑 איפוס כל הנתונים</button>
+          <div id="resetDBBox" style="display:none;margin-top:8px;background:var(--red2);border:1px solid var(--red3);border-radius:8px;padding:10px 12px">
+            <div style="font-size:12px;color:var(--red);font-weight:500;margin-bottom:6px">אישור איפוס מלא</div>
+            <div style="font-size:12px;color:var(--txt2);margin-bottom:10px;line-height:1.5">פעולה זו תמחק את כל המשתמשים, ההזמנות וההגדרות. לא ניתן לבטל.</div>
+            <div style="display:flex;gap:7px"><button class="bcl" id="btnResetDBCancel">ביטול</button><button class="bde" id="btnResetDBConfirm">כן, אפס הכל</button></div>
+          </div>
+        </div>
+      </div>
       <div id="aUserEditPanel" style="display:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.9rem">
           <button class="bsm gh" id="btnAdminUserBack">← חזרה</button>
@@ -433,6 +475,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 
 </div></div></div>
 
+<!-- Empathy Scheduler v24.5 | Created: 2026-03-16 -->
 <script>
 (function(){
 function H(pw){var h=5381;for(var i=0;i<pw.length;i++){h=((h<<5)+h)^pw.charCodeAt(i);h=h>>>0}return h.toString(16)+'_'+btoa(pw.split('').reverse().join('')).slice(0,10)}
@@ -466,7 +509,7 @@ function sk(d,i){return d+'_'+i}
 function gs(d,i){var k=sk(d,i);if(!slotsDB[k])slotsDB[k]={cap:gw(i).cap||cfg.defCap,bk:[],wl:[]};return slotsDB[k]}
 function tc(sd){return sd.bk.reduce(function(s,b){return s+b.cnt},0)}
 function isA(u){return u&&(u.isSA||u.isAdmin)}
-function addLog(m,t){lg.unshift({m:m,t:t||'info',ts:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});if(lg.length>20)lg.pop()}
+function addLog(m,t){lg.unshift({m:m,t:t||'info',ts:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});}
 function lockScreen(){if(_locked)return;_locked=true;updDot()}
 function unlockScreen(){_locked=false;updDot()}
 function updDot(){var d=g('adminLockDot');if(!d)return;d.className=_locked?'lock-dot red':'lock-dot grn';d.title=_locked?'נעול — יש שינויים לא שמורים':'פתוח לעדכונים'}
@@ -518,7 +561,7 @@ function afterAuth(){
 function setUserStatus(u,status){if(!u||u.isSA)return;u.status=status;}
 function logout(){if(cu&&!cu.isSA)setUserStatus(cu,'inactive');cu=null;pend=null;unlockScreen();g('lEmail').value='';g('lPw').value='';g('roleModal').classList.remove('on');ce();sv('vLogin')}
 function enterUser(){g('uAvi').textContent=ini(cu.name);g('uName').textContent=cu.name;g('uPhone').textContent=cu.phone;selDate=null;g('userDayDetail').style.display='none';renderUserCal();sv('vUser')}
-function enterAdmin(){g('adminTitle').textContent=cu.isSA?'ניהול ראשי':'ניהול';_locked=false;_dayDstr=null;_dayPending={};updDot();renderOverview();renderAdminCal();renderSettings();renderAdminUsers();switchTab(0);sv('vAdmin')}
+function enterAdmin(){g('adminTitle').textContent=cu.isSA?'ניהול ראשי':'ניהול';_locked=false;_dayDstr=null;_dayPending={};updDot();var db=g('btnDebugToggle');if(db)db.style.display=cu.isSA?'inline':'none';updDebug();renderOverview();renderAdminCal();renderSettings();renderAdminUsers();switchTab(0);sv('vAdmin')}
 function doForgot(){var c=cfg.contact||sa.contact||'';var txt=c?'לאיפוס הסיסמא שלח בקשה אל:\n'+c+'\n\nהמנהל ימחק את הסיסמא ובכניסה הבאה תגדיר חדשה.':'כתובת יצירת קשר לא הוגדרה. פנה למנהל ישירות.';g('forgotTxt').textContent=txt;g('forgotModal').classList.add('on')}
 
 function openProfile(){
@@ -653,10 +696,20 @@ function renderOverview(){
   g('aWbk').textContent=wbk;
   g('aWfu').textContent=wfu;
   g('aWwl').textContent=wwl;
-  // פעילות אחרונה
-  g('aRecent').innerHTML=lg.length===0
+  // פעילות אחרונה — מנוהל בנפרד
+  renderLog();
+}
+var _logPage=0;
+var _logPer=10;
+function renderLog(){
+  var panel=g('logPanel');if(!panel||panel.style.display==='none')return;
+  var start=_logPage*_logPer,slice=lg.slice(start,start+_logPer);
+  var el=g('aRecent');if(!el)return;
+  el.innerHTML=slice.length===0
     ?'<p style="font-size:12px;color:#888899;font-style:italic;padding:.8rem 0;text-align:center">אין פעילות</p>'
-    :lg.slice(0,8).map(function(a){var c=a.t==='ok'?'#0F6E56':a.t==='wa'?'#854F0B':'#3C3489';return'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #d0d0dc"><div style="width:6px;height:6px;border-radius:50%;background:'+c+';flex-shrink:0"></div><div style="flex:1;font-size:12px;color:#1a1a2e">'+a.m+'</div><span style="font-size:10px;color:#888899">'+a.ts+'</span></div>'}).join('');
+    :slice.map(function(a){var c=a.t==='ok'?'#0F6E56':a.t==='wa'?'#854F0B':'#3C3489';return'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #d0d0dc"><div style="width:6px;height:6px;border-radius:50%;background:'+c+';flex-shrink:0"></div><div style="flex:1;font-size:12px;color:#1a1a2e">'+a.m+'</div><span style="font-size:10px;color:#888899">'+a.ts+'</span></div>'}).join('');
+  var hasMore=lg.length>start+_logPer;
+  var wrap=g('logNextWrap');if(wrap)wrap.style.display=hasMore?'block':'none';
 }
 function renderAdminCal(){var sf2=T.toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});g('calHdr').textContent='\u05de\u05e6\u05d1 \u05d9\u05d5\u05de\u05df \u2014 \u05e9\u05d1\u05d5\u05e2\u05d9\u05d9\u05dd \u05e7\u05e8\u05d5\u05d1\u05d9\u05dd, \u05d4\u05d7\u05dc \u05de-'+sf2;var cal=g('adminCal');cal.innerHTML='';var dow=T.getDay();for(var i=0;i<dow;i++){var e=document.createElement('div');e.className='cd ce';cal.appendChild(e)}for(var i=0;i<14;i++){var d=new Date(T);d.setDate(d.getDate()+i);var dstr=ds(d);
   // active = day has windows (cfg schedule, or per-day override, or has slotsDB entries)
@@ -903,6 +956,7 @@ function renderAdminUsers(){
   // show list, hide both panels
   g('aUsersListView').style.display='block';g('aUserEditPanel').style.display='none';
   var np=g('aUserNewPanel');if(np)np.style.display='none';
+  var sp2=g('aSAEditPanel');if(sp2)sp2.style.display='none';
   el.innerHTML=users.length===0?'<p style="font-size:12px;color:#888899;font-style:italic;padding:.8rem 0;text-align:center">אין משתמשים</p>'
     :users.map(function(u){var hB=bookings.some(function(b){return b.user.email===u.email&&b.status==='ok'}),hW=wlist.some(function(w){return w.user.email===u.email});
       return'<div class="ur" style="cursor:pointer" onclick="APP.openAdminUserEdit(\''+u.email+'\')">'
@@ -914,8 +968,9 @@ function renderAdminUsers(){
         +'</div>';
     }).join('');
   // superadmin row
-  var sp=document.createElement('div');sp.style.cssText='padding:7px 0;border-top:1px solid #d0d0dc;margin-top:5px;display:flex;align-items:center;justify-content:space-between';
-  sp.innerHTML='<div><div style="font-size:12px;color:#1a1a2e;display:flex;align-items:center;gap:4px">מנהל ראשי <span class="bge a">Super</span></div><div style="font-size:11px;color:#888899">'+SA+'</div></div>'+(sa.pwHash?'<button class="bsm am" style="font-size:9px;padding:2px 5px" onclick="APP.rstSA()">אפס סיסמא</button>':'<span style="font-size:10px;color:#888899">סיסמא לא הוגדרה</span>');
+  var sp=document.createElement('div');sp.style.cssText='padding:7px 0;border-top:1px solid #d0d0dc;margin-top:5px;display:flex;align-items:center;justify-content:space-between;cursor:pointer';
+  sp.innerHTML='<div><div style="font-size:12px;color:#1a1a2e;display:flex;align-items:center;gap:4px">'+sa.name+' <span class="bge a">Super</span></div><div style="font-size:11px;color:#888899">'+SA+'</div></div><span style="color:#b0b0c0;font-size:14px">›</span>';
+  sp.addEventListener('click',openSAEdit);
   el.appendChild(sp);
 }
 var _auEmail=null;
@@ -960,6 +1015,46 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('\u05e1\u05d9\u05e1\u05de\u05ea \u05de\u05e0\u05d4\u05dc \u05e8\u05d0\u05e9\u05d9 \u05d0\u05d5\u05e4\u05e1\u05d4','wa');renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email})});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});addLog('\u05de\u05e9\u05ea\u05de\u05e9 \u05d4\u05d5\u05e1\u05e8: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
+var _debugMode=false;
+var APP_VERSION='v24.5';
+function updDebug(){
+  var vEl=g('versionStr');
+  if(vEl){vEl.textContent=APP_VERSION+' — DEBUG';vEl.style.display=_debugMode?'block':'none';}
+  var dz=g('saDebugZone');if(dz)dz.style.display=(_debugMode&&cu&&cu.isSA)?'block':'none';
+}
+function openSAEdit(){
+  g('saAvi').textContent=ini(sa.name);
+  g('saNameDisplay').textContent=sa.name;
+  g('saEmailDisplay').textContent=sa.email;
+  g('saName').value=sa.name;
+  g('saPhone').value=sa.phone||'';
+  g('saFlash').classList.remove('on');
+  g('resetDBBox').style.display='none';
+  var dz=g('saDebugZone');if(dz)dz.style.display=_debugMode?'block':'none';
+  g('aUsersListView').style.display='none';
+  g('aUserEditPanel').style.display='none';
+  g('aUserNewPanel').style.display='none';
+  g('aSAEditPanel').style.display='block';
+}
+function saveSAEdit(){
+  var n=g('saName').value.trim();
+  g('saNameErr').classList.remove('on');g('saName').classList.remove('er');
+  if(!n||n.length<2){g('saName').classList.add('er');g('saNameErr').classList.add('on');return;}
+  sa.name=n;sa.phone=g('saPhone').value.trim();
+  g('saAvi').textContent=ini(n);g('saNameDisplay').textContent=n;
+  addLog('מנהל ראשי עדכן פרטים','info');
+  var f=g('saFlash');f.textContent='הפרטים עודכנו.';f.className='fl2 ok on';
+  setTimeout(function(){f.classList.remove('on');},3000);
+}
+function doResetDB(){
+  users=[];bookings=[];wlist=[];slotsDB={};lg=[];
+  cfg={days:[0,3],wins:[{id:'w1',start:'10:00',cap:4},{id:'w2',start:'17:00',cap:4}],defCap:4,defDur:90,patient:'ישראל ישראלי',contact:''};
+  sa.pwHash=null;
+  addLog('DB אופס על ידי מנהל ראשי','wa');
+  g('resetDBBox').style.display='none';
+  var f=g('saFlash');f.textContent='כל הנתונים נמחקו.';f.className='fl2 wa on';
+  setTimeout(function(){f.classList.remove('on');renderAdminUsers();renderOverview();},2000);
+}
 function openNewUser(){
   g('nuName').value='';g('nuPhone').value='';g('nuEmail').value='';g('nuPw').value='';g('nuPwConf').value='';g('nuIsAdmin').checked=false;
   document.querySelectorAll('#aUserNewPanel .fe').forEach(function(e){e.classList.remove('on')});
@@ -1037,7 +1132,28 @@ g('btnNewUserBack').addEventListener('click',function(){renderAdminUsers()});
 g('btnNewUserCancel').addEventListener('click',function(){renderAdminUsers()});
 g('btnSaveNewUser').addEventListener('click',saveNewUser);
 g('nuPw').addEventListener('input',function(){pwStr('nuPw',['nuPb0','nuPb1','nuPb2','nuPb3'],'nuPwHint')});
-upSub();updDot();
+upSub();updDot();updDebug();
+g('btnDebugToggle').addEventListener('click',function(){
+  _debugMode=!_debugMode;
+  this.style.opacity=_debugMode?'1':'.6';
+  this.style.color=_debugMode?'#FFE08A':'#CCC9F8';
+  updDebug();
+});
+g('btnSAEditBack').addEventListener('click',function(){renderAdminUsers()});
+g('btnSASave').addEventListener('click',saveSAEdit);
+g('btnSAResetPw').addEventListener('click',function(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');var f=g('saFlash');f.textContent='הסיסמא אופסה. בכניסה הבאה תגדיר סיסמא חדשה.';f.className='fl2 wa on';setTimeout(function(){f.classList.remove('on')},4000);this.style.display='none';});
+g('btnResetDB').addEventListener('click',function(){g('resetDBBox').style.display='block';});
+g('btnResetDBCancel').addEventListener('click',function(){g('resetDBBox').style.display='none';});
+g('btnResetDBConfirm').addEventListener('click',doResetDB);
+g('btnShowLog').addEventListener('click',function(){
+  var p=g('logPanel');var open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  this.textContent=open?'הסתר לוג':'הצג לוג';
+  if(open){_logPage=0;renderLog();}
+});
+g('btnLogMinus').addEventListener('click',function(){if(_logPer>5){_logPer--;g('logPerPage').textContent=_logPer;_logPage=0;renderLog();}});
+g('btnLogPlus').addEventListener('click',function(){if(_logPer<50){_logPer++;g('logPerPage').textContent=_logPer;_logPage=0;renderLog();}});
+g('btnLogNext').addEventListener('click',function(){_logPage++;renderLog();});
 window.APP={cancelBkP:cancelBkP,cancelWtP:cancelWtP,toggleAdmin:toggleAdmin,rstPw:rstPw,rstSA:rstSA,rmUser:rmUser,openAdminUserEdit:openAdminUserEdit};
 // admin user edit panel buttons
 g('btnAdminUserBack').addEventListener('click',function(){renderAdminUsers()});
