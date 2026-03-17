@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v24.38 | Built: 2026-03-17 21:59 (GMT+2)
+     Empathy Scheduler v25.0 | Built: 2026-03-18 01:00 (GMT+2)
+     Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>מערכת תיאום ביקורים</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=DM+Sans:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -141,7 +143,16 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 <body>
 <div class="app"><div style="position:relative"><div class="card">
 
-<div id="vLogin" class="vw on">
+<div id="vLoading" class="vw on" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+  <div style="text-align:center;padding:2rem">
+    <p style="font-family:'Playfair Display',serif;font-size:22px;color:var(--pur);margin-bottom:1rem">Empathy Scheduler</p>
+    <p style="font-size:13px;color:var(--txt3);margin-bottom:1.5rem" id="loadingMsg">מתחבר למסד הנתונים...</p>
+    <div style="width:40px;height:40px;border:3px solid var(--pur3);border-top-color:var(--pur);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto"></div>
+  </div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<div id="vLogin" class="vw">
   <div class="hband">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
       <div>
@@ -566,6 +577,160 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 </div></div></div>
 
 <script>
+// ===== SUPABASE =====
+const SUPA_URL='https://yulsydrkqgehqoopuopb.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHN5ZHJrcWdlaHFvb3B1b3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODQ3ODYsImV4cCI6MjA4OTM2MDc4Nn0.TSMwUWqposup25cu9wkcqooRcXWxu0E1FXuLwGXfrq0';
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+
+// ===== DB LAYER =====
+var DB={
+  // --- CFG ---
+  async loadCfg(){
+    var {data}=await supa.from('cfg').select('*').eq('id',1).single();
+    if(data){
+      cfg.patient=data.patient||cfg.patient;
+      cfg.contact=data.contact||'';
+      cfg.defCap=data.def_cap||4;
+      cfg.defDur=data.def_dur||90;
+      cfg.maxWl=data.max_wl||4;
+      _sysMode=data.sys_mode||'maintenance';
+    }
+  },
+  async saveCfg(){
+    await supa.from('cfg').upsert({id:1,patient:cfg.patient,contact:cfg.contact,def_cap:cfg.defCap,def_dur:cfg.defDur,max_wl:cfg.maxWl,sys_mode:_sysMode});
+  },
+  // --- WEEK DAY WINS ---
+  async loadWeekDayWins(){
+    var {data}=await supa.from('week_day_wins').select('*').order('dow').order('sort_order');
+    if(data&&data.length){
+      weekDayWins={};
+      data.forEach(function(r){
+        if(!weekDayWins[r.dow])weekDayWins[r.dow]=[];
+        weekDayWins[r.dow].push({id:r.id,start:r.start_time,cap:r.cap,dur:r.dur,maxWl:r.max_wl});
+      });
+    }
+  },
+  async saveWeekDayWins(){
+    await supa.from('week_day_wins').delete().neq('id','__none__');
+    var rows=[];
+    Object.keys(weekDayWins).forEach(function(dow){
+      (weekDayWins[dow]||[]).forEach(function(w,i){
+        rows.push({id:w.id,dow:parseInt(dow),start_time:w.start,cap:w.cap,dur:w.dur||cfg.defDur,max_wl:w.maxWl!=null?w.maxWl:null,sort_order:i});
+      });
+    });
+    if(rows.length)await supa.from('week_day_wins').upsert(rows);
+  },
+  // --- USERS ---
+  async loadUsers(){
+    var {data}=await supa.from('users').select('*');
+    if(data&&data.length){
+      users=data.map(function(r){
+        return{id:r.id,name:r.name,phone:r.phone||'',email:r.email,pwHash:r.pw_hash,
+          isAdmin:r.is_admin,isSA:r.is_sa,deletable:r.deletable,blocked:r.blocked,
+          status:r.status||'inactive',contact:r.contact||''};
+      });
+      var saRow=users.find(function(u){return u.isSA&&!u.blocked;});
+      if(saRow)sa=saRow;
+      _saEntry=sa;
+    }
+  },
+  async saveUser(u){
+    await supa.from('users').upsert({id:u.id,name:u.name,phone:u.phone||'',email:u.email,
+      pw_hash:u.pwHash,is_admin:u.isAdmin,is_sa:u.isSA,deletable:u.deletable,
+      blocked:u.blocked,status:u.status||'inactive',contact:u.contact||''});
+  },
+  async deleteUser(id){
+    await supa.from('users').delete().eq('id',id);
+  },
+  // --- SLOTS / BOOKINGS / WLIST ---
+  async loadSlots(){
+    var {data:slots}=await supa.from('slots_db').select('*');
+    var {data:bks}=await supa.from('bookings').select('*');
+    var {data:wls}=await supa.from('wlist').select('*');
+    slotsDB={};
+    if(slots)slots.forEach(function(r){
+      var k=r.date_str+'_'+r.win_id;
+      if(!slotsDB[k])slotsDB[k]={cap:r.cap,bk:[],wl:[]};
+      slotsDB[k].cap=r.cap;
+    });
+    if(bks)bks.forEach(function(r){
+      var k=r.date_str+'_'+r.win_id;
+      if(!slotsDB[k])slotsDB[k]={cap:4,bk:[],wl:[]};
+      var u=users.find(function(x){return x.email===r.user_email;})||{name:r.user_name,email:r.user_email,phone:''};
+      var entry={user:u,cnt:r.cnt,id:r.id,ds:r.date_str,twId:r.win_id};
+      slotsDB[k].bk.push(entry);
+      bookings.push(Object.assign({},entry,{status:'ok'}));
+    });
+    if(wls)wls.forEach(function(r){
+      var k=r.date_str+'_'+r.win_id;
+      if(!slotsDB[k])slotsDB[k]={cap:4,bk:[],wl:[]};
+      var u=users.find(function(x){return x.email===r.user_email;})||{name:r.user_name,email:r.user_email,phone:''};
+      var entry={user:u,cnt:r.cnt,id:r.id,ds:r.date_str,twId:r.win_id};
+      slotsDB[k].wl.push(entry);
+      wlist.push(Object.assign({},entry));
+    });
+  },
+  async saveSlot(dstr,wid){
+    var k=dstr+'_'+wid;var sd=slotsDB[k];if(!sd)return;
+    await supa.from('slots_db').upsert({id:k,date_str:dstr,win_id:wid,cap:sd.cap});
+  },
+  async saveBooking(entry){
+    await supa.from('bookings').upsert({id:String(entry.id),user_id:entry.user.id||entry.user.email,
+      user_name:entry.user.name,user_email:entry.user.email,
+      date_str:entry.ds,win_id:entry.twId,cnt:entry.cnt,status:'ok'});
+  },
+  async deleteBooking(id){
+    await supa.from('bookings').delete().eq('id',String(id));
+  },
+  async saveWlist(entry){
+    await supa.from('wlist').upsert({id:String(entry.id),user_id:entry.user.id||entry.user.email,
+      user_name:entry.user.name,user_email:entry.user.email,
+      date_str:entry.ds,win_id:entry.twId,cnt:entry.cnt});
+  },
+  async deleteWlist(id){
+    await supa.from('wlist').delete().eq('id',String(id));
+  },
+  // --- DAY WINS OVERRIDE ---
+  async loadDayWins(){
+    var {data}=await supa.from('day_wins_db').select('*').order('date_str').order('sort_order');
+    if(data&&data.length){
+      dayWinsDB={};
+      data.forEach(function(r){
+        if(!dayWinsDB[r.date_str])dayWinsDB[r.date_str]=[];
+        dayWinsDB[r.date_str].push({id:r.win_id,start:r.start_time,cap:r.cap,dur:r.dur});
+      });
+    }
+  },
+  async saveDayWins(dstr){
+    await supa.from('day_wins_db').delete().eq('date_str',dstr);
+    var wins=dayWinsDB[dstr]||[];
+    var rows=wins.map(function(w,i){
+      return{id:dstr+'_'+w.id,date_str:dstr,win_id:w.id,start_time:w.start,cap:w.cap,dur:w.dur||cfg.defDur,sort_order:i};
+    });
+    if(rows.length)await supa.from('day_wins_db').upsert(rows);
+  },
+  // --- LOG ---
+  async saveLog(msg,type){
+    await supa.from('activity_log').insert({message:msg,log_type:type||'info'});
+  },
+  async loadLog(){
+    var {data}=await supa.from('activity_log').select('*').order('created_at',{ascending:false}).limit(200);
+    if(data)lg=data.map(function(r){
+      var t=new Date(r.created_at);
+      return{m:r.message,t:r.log_type,ts:t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})};
+    });
+  },
+  // --- LOAD ALL ---
+  async loadAll(){
+    await DB.loadCfg();
+    await DB.loadWeekDayWins();
+    await DB.loadUsers();
+    await DB.loadSlots();
+    await DB.loadDayWins();
+    await DB.loadLog();
+  }
+};
+</script>
 (function(){
 function H(pw){var h=5381;for(var i=0;i<pw.length;i++){h=((h<<5)+h)^pw.charCodeAt(i);h=h>>>0}return h.toString(16)+'_'+btoa(pw.split('').reverse().join('')).slice(0,10)}
 var SA='admin@family.com';
@@ -621,7 +786,7 @@ function sk(d,i){return d+'_'+i}
 function gs(d,i){var k=sk(d,i);if(!slotsDB[k])slotsDB[k]={cap:gw(i).cap||cfg.defCap,bk:[],wl:[]};return slotsDB[k]}
 function tc(sd){return sd.bk.reduce(function(s,b){return s+b.cnt},0)}
 function isA(u){return u&&(u.isSA||u.isAdmin)}
-function addLog(m,t){lg.unshift({m:m,t:t||'info',ts:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});}
+function addLog(m,t){lg.unshift({m:m,t:t||'info',ts:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});DB.saveLog(m,t||'info');}
 
 // ===== מצב מערכת =====
 function updSysMode(){
@@ -648,8 +813,7 @@ function toggleSysMode(){
   if(_sysMode==='maintenance'){
     _sysMode='active';
     addLog('המערכת עברה למצב פעילה','ok');
-    unlockScreen();
-    updSysMode();
+    unlockScreen();updSysMode();DB.saveCfg();
   }else{
     // בדוק משתמשים/מנהלים פעילים
     var activeNow=users.filter(function(u){
@@ -662,8 +826,7 @@ function toggleSysMode(){
     _sysMode='maintenance';
     _maintenanceAdmin=cu?cu.email:null;
     addLog('המערכת עברה למצב תחזוקה','wa');
-    kickAllUsers();
-    updSysMode();
+    kickAllUsers();updSysMode();DB.saveCfg();
   }
 }
 function kickAllUsers(){
@@ -704,14 +867,16 @@ function updDayLockUI(dstr){
 
 // ===== איפוס משתמשים =====
 function doResetUsers(){
-  // מחק כל משתמשים חוץ מ-SA
   bookings=[];wlist=[];
   Object.keys(slotsDB).forEach(function(k){slotsDB[k].bk=[];slotsDB[k].wl=[];});
-  // החזר SA לברירת מחדל
   var newSA={name:'מנהל ראשי',email:SA,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:'',status:'inactive',id:'sa'};
-  users=[newSA];
-  sa=newSA;
+  users=[newSA];sa=newSA;
   _maintenanceAdmin=cu?cu.email:null;
+  // DB: delete all non-SA users, bookings, wlist
+  supa.from('users').delete().eq('is_sa',false);
+  supa.from('users').update({blocked:false,pw_hash:null,status:'inactive'}).eq('id','sa');
+  supa.from('bookings').delete().neq('id','__none__');
+  supa.from('wlist').delete().neq('id','__none__');
   addLog('משתמשים אופסו — SA חזר לברירת מחדל','wa');
   g('resetUsersConfirm').style.display='none';
   renderAdminUsers();renderOverview();
@@ -764,7 +929,8 @@ function doSavePw(){
   if(err){se('pwNew','pwNewErr',err);return}
   if(pw!==conf){se('pwConf','pwConfErr','הסיסמאות אינן תואמות');return}
   pend.pwHash=H(pw);
-  if(pend._new){delete pend._new;users.push(pend);addLog(pend.name+' נרשם','info')}else addLog(pend.name+' עדכן סיסמא','info');
+  if(pend._new){delete pend._new;if(!pend.id)pend.id='u_'+Date.now();users.push(pend);addLog(pend.name+' נרשם','info')}else addLog(pend.name+' עדכן סיסמא','info');
+  DB.saveUser(pend);
   cu=pend;pend=null;g('pwNew').value='';g('pwConf').value='';afterAuth();
 }
 function afterAuth(){
@@ -788,7 +954,7 @@ function afterAuth(){
     setUserStatus(cu,'active');enterUser();
   }
 }
-function setUserStatus(u,status){if(!u)return;u.status=status;}
+function setUserStatus(u,status){if(!u)return;u.status=status;DB.saveUser(u);}
 function logout(){
   if(cu){
     setUserStatus(cu,'inactive');
@@ -801,10 +967,12 @@ function logout(){
   updSysMode();
 }
 function enterUser(){
+  window._isAdmin=false;
   g('uAvi').textContent=ini(cu.name);g('uName').textContent=cu.name;g('uPhone').textContent=cu.phone;
   selDate=null;g('userDayDetail').style.display='none';renderUserCal();sv('vUser');
 }
 function enterAdmin(){
+  window._isAdmin=true;
   if(isA(cu)&&!cu.isSA)_maintenanceAdmin=cu.email;
   setUserStatus(cu,'active_admin');
   g('adminTitle').textContent='ניהול מערכת';
@@ -826,7 +994,7 @@ function saveEdit(){
   ce();var n=g('eName').value.trim(),p=g('ePhone').value.trim(),e=g('eEmail').value.trim(),ok=true;
   if(!n||n.length<2){se('eName','eNameErr');ok=false}if(!p||p.replace(/\D/g,'').length<9){se('ePhone','ePhoneErr');ok=false}if(!e.includes('@')||!e.includes('.')){se('eEmail','eEmailErr');ok=false}if(!ok)return;
   if(users.find(function(u){return u.email===e&&u.email!==cu.email})){se('eEmail','eEmailErr','אימייל כבר קיים');return}
-  cu.name=n;cu.phone=p;cu.email=e;addLog(n+' עדכן פרטים','info');g('uName').textContent=n;g('uPhone').textContent=p;g('uAvi').textContent=ini(n);openProfile();
+  cu.name=n;cu.phone=p;cu.email=e;addLog(n+' עדכן פרטים','info');g('uName').textContent=n;g('uPhone').textContent=p;g('uAvi').textContent=ini(n);DB.saveUser(cu);openProfile();
 }
 function openChPw(){g('cpCur').value='';g('cpNew').value='';g('cpConf').value='';ce();g('prView').style.display='none';g('prChPw').style.display='block'}
 function cancelChPw(){ce();g('prView').style.display='block';g('prChPw').style.display='none'}
@@ -922,26 +1090,29 @@ function doBook(dstr,wid){
     if(diff===0){sf('fIn','מספר המבקרים לא שונה.','in');return;}
     if(diff>0){
       var free=sd.cap-tc(sd),add=Math.min(diff,free),toWl=diff-add;
-      if(add>0){myB.cnt+=add;var bi=bookings.findIndex(function(b){return b.id===myB.id});if(bi>=0)bookings[bi].cnt=myB.cnt;}
+      if(add>0){myB.cnt+=add;var bi=bookings.findIndex(function(b){return b.id===myB.id});if(bi>=0)bookings[bi].cnt=myB.cnt;DB.saveBooking(myB);}
       if(toWl>0){
         if(sd.wl.length<(gw(wid).maxWl!=null?gw(wid).maxWl:cfg.maxWl)&&!gUW(dstr,wid)){
           var we2={user:cu,cnt:toWl,id:Date.now(),ds:dstr,twId:wid};
           sd.wl=sortWl(sd.wl.concat([we2]));wlist.push(Object.assign({},we2));
+          DB.saveWlist(we2);
           sf('fOk','אושרו '+myB.cnt+' מבקרים · ממתינים '+toWl,'ok');
         }else sf('fWa',add>0?'אושרו '+add+' מבקרים':'אין מקום פנוי.','wa');
       }else sf('fOk','אושרו '+myB.cnt+' מבקרים','ok');
     }else{
       myB.cnt=cnt;if(myB.cnt<1)myB.cnt=1;
       var bi=bookings.findIndex(function(b){return b.id===myB.id});if(bi>=0)bookings[bi].cnt=myB.cnt;
+      DB.saveBooking(myB);
       promote(dstr,wid);
       sf('fIn','עודכן: אושרו '+myB.cnt+' מבקרים','in');
     }
   }else{
     var free=sd.cap-tc(sd),booked=Math.min(cnt,free),remaining=cnt-booked;
-    if(booked>0){var entry={user:cu,cnt:booked,id:Date.now(),ds:dstr,twId:wid};sd.bk.push(entry);bookings.push(Object.assign({},entry,{status:'ok'}));}
+    if(booked>0){var entry={user:cu,cnt:booked,id:Date.now(),ds:dstr,twId:wid};sd.bk.push(entry);bookings.push(Object.assign({},entry,{status:'ok'}));DB.saveBooking(entry);DB.saveSlot(dstr,wid);}
     if(remaining>0&&sd.wl.length<(gw(wid).maxWl!=null?gw(wid).maxWl:cfg.maxWl)&&!gUW(dstr,wid)){
       var we2={user:cu,cnt:remaining,id:Date.now()+1,ds:dstr,twId:wid};
       sd.wl=sortWl(sd.wl.concat([we2]));wlist.push(Object.assign({},we2));
+      DB.saveWlist(we2);
       sf('fOk','אושרו '+booked+' מבקרים · ממתינים '+remaining,'ok');
     }else if(booked>0){
       sf('fOk','אושרו '+booked+' מבקרים · '+w.start,'ok');
@@ -951,8 +1122,19 @@ function doBook(dstr,wid){
     if(booked>0)addLog(cu.name+' קבע ביקור: '+fds(dstr)+' '+w.start,'ok');
   }
   renderUserDayVis(dstr);renderUserSlots(dstr);renderUserCal();
+  DB.saveSlot(dstr,wid);
 }
-function cancelBkSlot(dstr,wid){var sd=gs(dstr,wid),idx=sd.bk.findIndex(function(b){return b.user.email===cu.email});if(idx<0)return;var b=sd.bk[idx];sd.bk.splice(idx,1);var bi=bookings.findIndex(function(x){return x.id===b.id});if(bi>=0)bookings.splice(bi,1);promote(dstr,wid);addLog(cu.name+' \u05d1\u05d9\u05d8\u05dc','info');renderUserDayVis(dstr);renderUserSlots(dstr);renderUserCal();sf('fIn','\u05d4\u05d1\u05d9\u05e7\u05d5\u05e8 \u05d1\u05d5\u05d8\u05dc.','in')}
+function cancelBkSlot(dstr,wid){
+  var sd=gs(dstr,wid),idx=sd.bk.findIndex(function(b){return b.user.email===cu.email});
+  if(idx<0)return;
+  var b=sd.bk[idx];sd.bk.splice(idx,1);
+  var bi=bookings.findIndex(function(x){return x.id===b.id});if(bi>=0)bookings.splice(bi,1);
+  promote(dstr,wid);
+  DB.deleteBooking(b.id);DB.saveSlot(dstr,wid);
+  addLog(cu.name+' ביטל','info');
+  renderUserDayVis(dstr);renderUserSlots(dstr);renderUserCal();
+  sf('fIn','הביקור בוטל.','in');
+}
 function doJoinWl(dstr,wid){
   var sd=gs(dstr,wid);
   var winMaxWl=(gw(wid).maxWl!=null?gw(wid).maxWl:cfg.maxWl);
@@ -960,12 +1142,22 @@ function doJoinWl(dstr,wid){
   if(gUW(dstr,wid)){sf('fEr2','כבר ברשימת ההמתנה.','er');return;}
   var entry={user:cu,cnt:1,id:Date.now(),ds:dstr,twId:wid};
   sd.wl=sortWl(sd.wl.concat([entry]));wlist.push(Object.assign({},entry));
+  DB.saveWlist(entry);
   var pos=sd.wl.findIndex(function(w){return w.user.email===cu.email})+1;
   addLog(cu.name+' נוסף להמתנה','wa');
   renderUserSlots(dstr);renderUserCal();
   sf('fWa','נוספת להמתנה. מיקום '+pos+'/'+winMaxWl,'wa');
 }
-function cancelWtSlot(dstr,wid){var sd=gs(dstr,wid),idx=sd.wl.findIndex(function(w){return w.user.email===cu.email});if(idx<0)return;var w=sd.wl[idx];sd.wl.splice(idx,1);var wi=wlist.findIndex(function(x){return x.id===w.id});if(wi>=0)wlist.splice(wi,1);addLog(cu.name+' \u05d1\u05d9\u05d8\u05dc \u05d4\u05de\u05ea\u05e0\u05d4','info');renderUserSlots(dstr);renderUserCal();sf('fIn','\u05d4\u05d4\u05de\u05ea\u05e0\u05d4 \u05d1\u05d5\u05d8\u05dc\u05d4.','in')}
+function cancelWtSlot(dstr,wid){
+  var sd=gs(dstr,wid),idx=sd.wl.findIndex(function(w){return w.user.email===cu.email});
+  if(idx<0)return;
+  var w=sd.wl[idx];sd.wl.splice(idx,1);
+  var wi=wlist.findIndex(function(x){return x.id===w.id});if(wi>=0)wlist.splice(wi,1);
+  DB.deleteWlist(w.id);
+  addLog(cu.name+' ביטל המתנה','info');
+  renderUserSlots(dstr);renderUserCal();
+  sf('fIn','ההמתנה בוטלה.','in');
+}
 function sortWl(list){return list.sort(function(a,b){var aH=bookings.some(function(x){return x.user.email===a.user.email&&x.status==='ok'}),bH=bookings.some(function(x){return x.user.email===b.user.email&&x.status==='ok'});if(aH&&!bH)return -1;if(!aH&&bH)return 1;return a.id-b.id})}
 function promote(dstr,wid){var sd=slotsDB[sk(dstr,wid)];if(!sd||!sd.wl.length)return;var go=true;while(go){go=false;var free=sd.cap-tc(sd);if(!sd.wl.length||free<=0)break;var first=sd.wl[0];if(first.cnt<=free){sd.wl.shift();sd.bk.push(first);var wi=wlist.findIndex(function(w){return w.id===first.id});if(wi>=0)wlist.splice(wi,1);bookings.push(Object.assign({},first,{status:'ok'}));addLog(first.user.name+' \u05d4\u05d5\u05e2\u05dc\u05d4 \u05de\u05d4\u05de\u05ea\u05e0\u05d4','ok');go=true}else break}}
 
@@ -1365,6 +1557,9 @@ function commitDayEdit(){
   if(changed){
     currentWins.sort(function(a,b){return a.start.localeCompare(b.start)});
     dayWinsDB[savedDstr]=currentWins;
+    DB.saveDayWins(savedDstr);
+    // sync slots to DB
+    currentWins.forEach(function(w){DB.saveSlot(savedDstr,w.id);});
   }
 
   var fl=g('dayFlash');if(fl){fl.textContent='השינויים נרשמו ליום '+fds(savedDstr)+'.';fl.className='fl2 ok on';setTimeout(function(){fl.classList.remove('on')},3000)}
@@ -1516,6 +1711,8 @@ function applySettings(updateFuture){
   }
   _pendingSettings=null;
   _settingsChanged=true;
+  DB.saveCfg();
+  DB.saveWeekDayWins();
   var ub=g('btnUpdateCal');if(ub)ub.style.display='block';
   upSub();renderAdminCal();renderOverview();renderSettings();unlockScreen();
   var s=g('setOk');s.textContent='ההגדרות נשמרו.';s.className='fl2 ok on';setTimeout(function(){s.classList.remove('on')},3000);
@@ -1609,17 +1806,17 @@ function saveAdminUserEdit(){
   }
   u.name=n;u.phone=p;u.email=e;
   addLog('מנהל עדכן פרטי '+n,'info');
-  // refresh display
+  DB.saveUser(u);
   g('auAvi').textContent=ini(n);g('auNameDisplay').textContent=n;g('auEmailDisplay').textContent=e;
   g('btnAuToggleAdmin').textContent=u.isAdmin?'הסר הרשאת מנהל':'מנה כמנהל';
   var f=g('auFlash');f.textContent='הפרטים עודכנו.';f.className='fl2 ok on';setTimeout(function(){f.classList.remove('on')},3000);
 }
-function toggleAdmin(email){var u=users.find(function(u){return u.email===email});if(!u)return;u.isAdmin=!u.isAdmin;addLog(u.name+' '+(u.isAdmin?'\u05de\u05d5\u05e0\u05d4 \u05db\u05de\u05e0\u05d4\u05dc':'\u05d4\u05d5\u05e1\u05e8\u05d4 \u05d4\u05e8\u05e9\u05d0\u05d4'),'info');renderAdminUsers()}
-function rstPw(email){var u=users.find(function(u){return u.email===email});if(!u)return;u.pwHash=null;addLog('\u05e1\u05d9\u05e1\u05de\u05ea '+u.name+' \u05d0\u05d5\u05e4\u05e1\u05d4','wa');renderAdminUsers()}
-function rstSA(){sa.pwHash=null;addLog('\u05e1\u05d9\u05e1\u05de\u05ea \u05de\u05e0\u05d4\u05dc \u05e8\u05d0\u05e9\u05d9 \u05d0\u05d5\u05e4\u05e1\u05d4','wa');renderAdminUsers()}
-function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email})});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
+function toggleAdmin(email){var u=users.find(function(u){return u.email===email});if(!u)return;u.isAdmin=!u.isAdmin;addLog(u.name+' '+(u.isAdmin?'מונה כמנהל':'הוסרה הרשאה'),'info');DB.saveUser(u);renderAdminUsers()}
+function rstPw(email){var u=users.find(function(u){return u.email===email});if(!u)return;u.pwHash=null;addLog('סיסמת '+u.name+' אופסה','wa');DB.saveUser(u);renderAdminUsers()}
+function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
+function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v24.38';
+var APP_VERSION='v25.0';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -1637,13 +1834,11 @@ function saveSAEdit(){
   if(!e.includes('@')||!e.includes('.')){g('saEmail').classList.add('er');g('saEmailErr').classList.add('on');return;}
   if(e===sa.email){var f=g('saFlash');f.textContent='האימייל זהה לנוכחי.';f.className='fl2 in on';setTimeout(function(){f.classList.remove('on');},2000);return;}
   if(users.find(function(u){return u.email===e&&!u.blocked})){g('saEmail').classList.add('er');g('saEmailErr').textContent='אימייל כבר קיים';g('saEmailErr').classList.add('on');return;}
-  // חסום את ה-SA הנוכחי
-  sa.blocked=true;
-  sa.status='inactive';
-  // צור SA חדש
+  sa.blocked=true;sa.status='inactive';
+  DB.saveUser(sa);
   var newSA={name:'מנהל ראשי',email:e,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:sa.contact,status:'inactive',id:'sa_'+Date.now()};
-  users.push(newSA);
-  sa=newSA; // עדכן reference
+  users.push(newSA);sa=newSA;
+  DB.saveUser(newSA);
   g('saEmailDisplay').textContent=e;
   addLog('אימייל מנהל ראשי עודכן','info');
   var f=g('saFlash');f.textContent='האימייל עודכן. הכניסה הבאה עם: '+e;f.className='fl2 ok on';
@@ -1698,9 +1893,10 @@ function doUpdateCal(){
 function toggleBlock(email){
   var u=users.find(function(u){return u.email===email});if(!u)return;
   u.blocked=!u.blocked;
-  if(u.blocked&&cu&&cu.email===email){logout();return;} // אם חסמת את עצמך — יציאה
+  DB.saveUser(u);
+  if(u.blocked&&cu&&cu.email===email){logout();return;}
   addLog((u.blocked?'חסימת ':'שחרור חסימת ')+u.name,'wa');
-  openAdminUserEdit(email); // רענן פאנל
+  openAdminUserEdit(email);
   renderAdminUsers();
 }
 function openNewUser(){
@@ -1727,8 +1923,9 @@ function saveNewUser(){
   else if(pw!==conf){g('nuPwConf').classList.add('er');g('nuPwConfErr').classList.add('on');ok=false}
   if(!ok)return;
   if(users.find(function(u){return u.email===e})){g('nuEmail').classList.add('er');g('nuEmailErr').textContent=e===sa.email?'כתובת זו שמורה למנהל המערכת':'אימייל כבר קיים';g('nuEmailErr').classList.add('on');return}
-  var newUser={name:n,phone:p,email:e,pwHash:H(pw),id:Date.now(),isAdmin:g('nuIsAdmin').checked,status:'inactive'};
+  var newUser={name:n,phone:p,email:e,pwHash:H(pw),id:'u_'+Date.now(),isAdmin:g('nuIsAdmin').checked,status:'inactive',blocked:false,deletable:true,isSA:false};
   users.push(newUser);
+  DB.saveUser(newUser);
   addLog(n+' נוסף על ידי מנהל','info');
   var f=g('nuFlash');f.textContent='המשתמש '+n+' נוצר בהצלחה.';f.className='fl2 ok on';
   setTimeout(function(){renderAdminUsers();renderOverview()},1500);
@@ -1789,6 +1986,7 @@ g('btnSaveConst').addEventListener('click',function(){
   upSub();
   var s=g('constOk');s.textContent='הקבועים נשמרו.';s.className='fl2 ok on';setTimeout(function(){s.classList.remove('on')},3000);
   addLog('קבועים עודכנו','info');
+  DB.saveCfg();
 });
 g('btnPrintReport').addEventListener('click',function(){window.print();});
 [0,1,2,3,4].forEach(function(i){var b=g('rptBtn'+i);if(b)b.addEventListener('click',function(){setActiveRpt(i,true);});});
@@ -1823,7 +2021,25 @@ g('btnNewUserBack').addEventListener('click',function(){renderAdminUsers()});
 g('btnNewUserCancel').addEventListener('click',function(){renderAdminUsers()});
 g('btnSaveNewUser').addEventListener('click',saveNewUser);
 g('nuPw').addEventListener('input',function(){pwStr('nuPw',['nuPb0','nuPb1','nuPb2','nuPb3'],'nuPwHint')});
-upSub();updDot();
+// ===== INIT WITH DB =====
+(async function(){
+  try{
+    var lm=document.getElementById('loadingMsg');
+    if(lm)lm.textContent='טוען משתמשים...';
+    await DB.loadAll();
+    if(lm)lm.textContent='מוכן!';
+    upSub();updDot();updSysMode();
+    var vEl=document.getElementById('versionStr');if(vEl)vEl.textContent=APP_VERSION;
+    var vAdEl=document.getElementById('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
+    // hide loading, show login
+    document.getElementById('vLoading').classList.remove('on');
+    document.getElementById('vLogin').classList.add('on');
+  }catch(e){
+    var lm=document.getElementById('loadingMsg');
+    if(lm)lm.textContent='שגיאת חיבור: '+e.message;
+    console.error('DB load error:',e);
+  }
+})();
 // גרסא מוצגת בכותרת בכל המסכים
 var vEl=g('versionStr');if(vEl)vEl.textContent=APP_VERSION;
 var vAdEl=g('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
@@ -1876,6 +2092,26 @@ g('btnAuDelete').addEventListener('click',function(){if(!confirm('האם למח�
 g('btnResetUsers').addEventListener('click',function(){g('resetUsersConfirm').style.display='block';});
 g('btnResetUsersCancel').addEventListener('click',function(){g('resetUsersConfirm').style.display='none';});
 g('btnResetUsersOk').addEventListener('click',doResetUsers);
+
+// ===== REALTIME =====
+// Live sync: when another user makes a booking, refresh automatically
+supa.channel('public:bookings')
+  .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},function(payload){
+    // reload slots and re-render visible screens
+    DB.loadSlots().then(function(){
+      if(cu&&!window._isAdmin)renderUserCal();
+      if(window._isAdmin)renderOverview();
+    });
+  })
+  .subscribe();
+supa.channel('public:users')
+  .on('postgres_changes',{event:'*',schema:'public',table:'users'},function(payload){
+    DB.loadUsers().then(function(){
+      if(window._isAdmin){renderAdminUsers();renderOverview();}
+    });
+  })
+  .subscribe();
+
 })();
 </script>
 </body>
