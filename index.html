@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.2 | Built: 2026-03-18 01:35 (GMT+2)
+     Empathy Scheduler v25.3 | Built: 2026-03-18 01:51 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -1817,7 +1817,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.2';
+var APP_VERSION='v25.3';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2022,29 +2022,6 @@ g('btnNewUserBack').addEventListener('click',function(){renderAdminUsers()});
 g('btnNewUserCancel').addEventListener('click',function(){renderAdminUsers()});
 g('btnSaveNewUser').addEventListener('click',saveNewUser);
 g('nuPw').addEventListener('input',function(){pwStr('nuPw',['nuPb0','nuPb1','nuPb2','nuPb3'],'nuPwHint')});
-// ===== INIT WITH DB =====
-(async function(){
-  try{
-    var lm=document.getElementById('loadingMsg');
-    if(lm)lm.textContent='טוען משתמשים...';
-    await DB.loadAll();
-    if(lm)lm.textContent='מוכן!';
-    upSub();updDot();updSysMode();
-    var vEl=document.getElementById('versionStr');if(vEl)vEl.textContent=APP_VERSION;
-    var vAdEl=document.getElementById('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
-    // hide loading, show login
-    document.getElementById('vLoading').classList.remove('on');
-    document.getElementById('vLogin').classList.add('on');
-  }catch(e){
-    var lm=document.getElementById('loadingMsg');
-    if(lm)lm.textContent='שגיאת חיבור: '+e.message;
-    console.error('DB load error:',e);
-  }
-})();
-// גרסא מוצגת בכותרת בכל המסכים
-var vEl=g('versionStr');if(vEl)vEl.textContent=APP_VERSION;
-var vAdEl=g('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
-updSysMode();
 g('btnSysMode').addEventListener('click',toggleSysMode);
 g('btnMaintenanceOut').addEventListener('click',logout);
 g('btnSAEditBack').addEventListener('click',function(){renderAdminUsers()});
@@ -2112,6 +2089,24 @@ supa.channel('public:users')
     });
   })
   .subscribe();
+
+// ===== INIT WITH DB — must be last =====
+(async function(){
+  try{
+    var lm=document.getElementById('loadingMsg');
+    if(lm)lm.textContent='טוען נתונים...';
+    await DB.loadAll();
+    upSub();updDot();updSysMode();
+    var vEl=g('versionStr');if(vEl)vEl.textContent=APP_VERSION;
+    var vAdEl=g('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
+    document.getElementById('vLoading').classList.remove('on');
+    document.getElementById('vLogin').classList.add('on');
+  }catch(e){
+    var lm=document.getElementById('loadingMsg');
+    if(lm)lm.textContent='שגיאת חיבור: '+e.message;
+    console.error('DB load error:',e);
+  }
+})();
 
 })();
 </script>
