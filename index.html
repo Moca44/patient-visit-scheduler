@@ -1621,12 +1621,13 @@ function renderTwins(){
   wins.forEach(function(w,i){
     var row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--brd)';
-    row.innerHTML=
-      '<select id="twT_'+i+'" class="fi" dir="ltr" style="width:72px;flex-shrink:0"></select>'
-      +'<input type="number" id="twD_'+i+'" min="15" max="240" value="'+(w.dur||cfg.defDur)+'" class="fi" style="width:62px;flex-shrink:0">'
-      +'<input type="number" id="twC_'+i+'" min="1" max="30" value="'+w.cap+'" class="fi" style="width:50px;flex-shrink:0">'
-      +'<input type="number" id="twW_'+i+'" min="0" max="20" value="'+(w.maxWl!=null?w.maxWl:cfg.maxWl)+'" class="fi" style="width:50px;flex-shrink:0" title="מקסימום ממתינים">'
-      +'<button class="bsm gh" id="rmTw_'+i+'" style="font-size:10px;padding:3px 7px;flex-shrink:0">✕</button>';
+    // Build row via createElement to avoid HTML parser issues with select tags
+    var sel=document.createElement('select');sel.id='twT_'+i;sel.className='fi';sel.dir='ltr';sel.style.cssText='width:72px;flex-shrink:0';
+    var inpD=document.createElement('input');inpD.type='number';inpD.id='twD_'+i;inpD.min='15';inpD.max='240';inpD.value=String(w.dur||cfg.defDur);inpD.className='fi';inpD.style.cssText='width:62px;flex-shrink:0';
+    var inpC=document.createElement('input');inpC.type='number';inpC.id='twC_'+i;inpC.min='1';inpC.max='30';inpC.value=String(w.cap);inpC.className='fi';inpC.style.cssText='width:50px;flex-shrink:0';
+    var inpW=document.createElement('input');inpW.type='number';inpW.id='twW_'+i;inpW.min='0';inpW.max='20';inpW.value=String(w.maxWl!=null?w.maxWl:cfg.maxWl);inpW.className='fi';inpW.style.cssText='width:50px;flex-shrink:0';inpW.title='מקסימום ממתינים';
+    var btnRm=document.createElement('button');btnRm.id='rmTw_'+i;btnRm.className='bsm gh';btnRm.style.cssText='font-size:10px;padding:3px 7px;flex-shrink:0';btnRm.textContent='✕';
+    row.appendChild(sel);row.appendChild(inpD);row.appendChild(inpC);row.appendChild(inpW);row.appendChild(btnRm);
     el.appendChild(row);
     var tSel=g('twT_'+i);if(tSel)buildTimeSelect(tSel,w.start);
     (function(idx){
