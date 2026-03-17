@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.1 | Built: 2026-03-18 01:16 (GMT+2)
+     Empathy Scheduler v25.2 | Built: 2026-03-18 01:35 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -582,6 +582,31 @@ const SUPA_URL='https://yulsydrkqgehqoopuopb.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHN5ZHJrcWdlaHFvb3B1b3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODQ3ODYsImV4cCI6MjA4OTM2MDc4Nn0.TSMwUWqposup25cu9wkcqooRcXWxu0E1FXuLwGXfrq0';
 const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
 
+// ===== GLOBAL DATA (shared between DB layer and app) =====
+var SA='admin@family.com';
+var T=new Date();T.setHours(0,0,0,0);
+var _saEntry={name:'מנהל ראשי',email:SA,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:'',status:'inactive',id:'sa'};
+var users=[_saEntry];
+var bookings=[],wlist=[],cu=null,pend=null,selDate=null,lg=[];
+var sa=_saEntry;
+var _sysMode='maintenance';
+var _maintenanceAdmin=null;
+var _dayLocks={};
+var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,patient:'ישראל ישראלי',contact:''};
+var weekDayWins={
+  0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}],
+  1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}],
+  2:[{id:'wd2a',start:'11:00',cap:4,dur:90},{id:'wd2b',start:'17:30',cap:4,dur:90}],
+  3:[{id:'wd3a',start:'11:00',cap:4,dur:90},{id:'wd3b',start:'17:30',cap:4,dur:90}],
+  4:[{id:'wd4a',start:'11:00',cap:4,dur:90},{id:'wd4b',start:'17:30',cap:4,dur:90}],
+  5:[{id:'wd5a',start:'11:00',cap:4,dur:90}],
+  6:[{id:'wd6a',start:'10:30',cap:6,dur:120},{id:'wd6b',start:'17:00',cap:6,dur:120}]
+};
+var _prevWeekDayWins=null;
+var _settingsChanged=false;
+var slotsDB={};
+var dayWinsDB={};
+
 // ===== DB LAYER =====
 var DB={
   // --- CFG ---
@@ -733,30 +758,6 @@ var DB={
 </script>
 (function(){
 function H(pw){var h=5381;for(var i=0;i<pw.length;i++){h=((h<<5)+h)^pw.charCodeAt(i);h=h>>>0}return h.toString(16)+'_'+btoa(pw.split('').reverse().join('')).slice(0,10)}
-var SA='admin@family.com';
-var T=new Date();T.setHours(0,0,0,0);
-var _saEntry={name:'מנהל ראשי',email:SA,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:'',status:'inactive',id:'sa'};
-var users=[_saEntry];
-var bookings=[],wlist=[],cu=null,pend=null,selDate=null,lg=[];
-var sa=_saEntry;
-// מצב מערכת: 'maintenance' = תחזוקה | 'active' = פעילה
-var _sysMode='maintenance';
-var _maintenanceAdmin=null; // שם המנהל הפעיל במצב תחזוקה
-// נעילת ימים: {dstr: {userName, timer}}
-var _dayLocks={};
-var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,patient:'ישראל ישראלי',contact:''};
-var weekDayWins={
-  0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}], // ראשון
-  1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}], // שני
-  2:[{id:'wd2a',start:'11:00',cap:4,dur:90},{id:'wd2b',start:'17:30',cap:4,dur:90}], // שלישי
-  3:[{id:'wd3a',start:'11:00',cap:4,dur:90},{id:'wd3b',start:'17:30',cap:4,dur:90}], // רביעי
-  4:[{id:'wd4a',start:'11:00',cap:4,dur:90},{id:'wd4b',start:'17:30',cap:4,dur:90}], // חמישי
-  5:[{id:'wd5a',start:'11:00',cap:4,dur:90}],                                         // שישי
-  6:[{id:'wd6a',start:'10:30',cap:6,dur:120},{id:'wd6b',start:'17:00',cap:6,dur:120}] // שבת
-};
-var _prevWeekDayWins=null; // snapshot לפני שינוי הגדרות — לצורך "עדכן יומן"
-var _settingsChanged=false;
-var slotsDB={};
 var _locked=false;
 function lockScreen(){if(_locked)return;_locked=true;updDot()}
 function unlockScreen(){_locked=false;updDot()}
@@ -1411,8 +1412,7 @@ function renderAdminCal(){var sf2=T.toLocaleDateString('he-IL',{day:'numeric',mo
   (function(dstr){div.addEventListener('click',function(){showAdminDay(dstr)})})(dstr);
   cal.appendChild(div)}g('adminDayDetail').style.display='none'}
 // pending day edits — committed only on "בצע שינויים"
-var _dayDstr=null,_dayPending={}; // {wid: {cap, isNew, start, removed}}
-var dayWinsDB={}; // {dstr: [{id,start,cap}]} — per-day window list overrides
+var _dayDstr=null,_dayPending={};
 
 function getDayWins(dstr){
   // 1. per-day override (admin edited this specific date)
@@ -1817,7 +1817,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.1';
+var APP_VERSION='v25.2';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
