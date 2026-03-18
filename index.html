@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.8 | Built: 2026-03-18 11:29 (GMT+2)
+     Empathy Scheduler v25.9 | Built: 2026-03-18 13:24 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -165,6 +165,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
           <span id="loginModeTxt" style="font-size:9px;color:var(--pur4);letter-spacing:.03em"></span>
         </div>
         <span id="versionStr" style="font-size:9px;color:var(--pur4);letter-spacing:.03em"></span>
+        <button class="bg2btn btnAbout" style="font-size:9px;padding:2px 6px;margin-top:2px;color:var(--pur4);border:1px solid var(--pur4);border-radius:4px">About</button>
       </div>
     </div>
   </div>
@@ -213,7 +214,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 </div>
 
 <div id="vUser" class="vw">
-  <div class="hband"><div class="tbar"><div><p class="ht">תיאום ביקור</p><p class="hs">בחרו תאריך והזמינו/עדכנו מקומות</p></div><button class="bg2btn" id="btnUserOut" style="color:#CCC9F8">יציאה</button></div></div>
+  <div class="hband"><div class="tbar"><div><p class="ht">תיאום ביקור</p><p class="hs">בחרו תאריך והזמינו/עדכנו מקומות</p></div><div style="display:flex;gap:6px;align-items:center"><button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button><button class="bg2btn" id="btnUserOut" style="color:#CCC9F8">יציאה</button></div></div></div>
   <div class="body">
     <div id="maintenanceBanner" style="display:none;background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 12px;margin-bottom:.9rem;text-align:center">
       <div style="font-size:13px;font-weight:500;color:#A32D2D">⚠️ המערכת בתחזוקה – נא לצאת</div>
@@ -244,7 +245,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 </div>
 
 <div id="vProfile" class="vw">
-  <div class="hband"><div class="tbar"><div><p class="ht">הפרופיל שלי</p><p class="hs">פרטים ואפשרויות</p></div><button class="bg2btn" id="btnProfBack" style="color:#CCC9F8">חזרה</button></div></div>
+  <div class="hband"><div class="tbar"><div><p class="ht">הפרופיל שלי</p><p class="hs">פרטים ואפשרויות</p></div><div style="display:flex;gap:6px;align-items:center"><button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button><button class="bg2btn" id="btnProfBack" style="color:#CCC9F8">חזרה</button></div></div></div>
   <div class="body">
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:.8rem">
       <div style="width:44px;height:44px;border-radius:50%;background:var(--pur3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--pur);flex-shrink:0" id="prAvi"></div>
@@ -312,6 +313,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
+      <button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button>
       <button class="bg2btn" id="btnSysMode" style="font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.3);border-radius:5px;color:#CCC9F8">עבור לפעילה</button>
       <span class="lock-dot" id="adminLockDot"></span>
       <button class="bg2btn" id="btnAdminOut" style="color:#CCC9F8">יציאה</button>
@@ -526,6 +528,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       <div class="fg"><label class="lbl">מקסימום מבקרים (ברירת מחדל)</label><input id="setDefCap" type="number" min="1" max="20" value="4" class="fi"/></div>
       <div class="fg"><label class="lbl">משך חלון בדקות (ברירת מחדל)</label><input id="setDefDur" type="number" min="15" max="240" value="90" class="fi"/></div>
       <div class="fg"><label class="lbl">מקסימום ממתינים לחלון (ברירת מחדל)</label><input id="setMaxWl" type="number" min="0" max="20" value="4" class="fi"/></div>
+      <div class="fg"><label class="lbl">זמן קצוב ללא פעילות (דקות, 0=ללא הגבלה)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="30" class="fi"/></div>
       <button class="bp" id="btnSaveConst">שמור קבועים</button>
       <div id="constOk" class="fl2 ok" style="margin-top:8px"></div>
     </div>
@@ -573,6 +576,25 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
   </div>
 </div>
 
+<div id="aboutModal" class="ov">
+  <div class="mb">
+    <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--pur);margin-bottom:.8rem">Empathy Scheduler</p>
+    <div style="font-size:12px;color:var(--txt2);line-height:1.8">
+      <div><b>Version:</b> <span id="aboutVersion"></span></div>
+      <div><b>Author:</b> Moshe Carmeli</div>
+      <div><b>Built with:</b> Claude.ai (Anthropic)</div>
+      <div><b>License:</b> CC BY-NC 4.0 — Free for personal, non-commercial use</div>
+      <div style="margin-top:8px"><b>Source:</b>
+        <a href="https://github.com/moca44/patient-visit-scheduler" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">github.com/moca44/patient-visit-scheduler</a>
+      </div>
+      <div style="margin-top:4px"><b>Docs:</b>
+        <a href="https://github.com/moca44/patient-visit-scheduler/tree/main/docs" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">Documentation</a>
+      </div>
+    </div>
+    <button class="bp" style="margin-top:1rem" id="btnAboutOk">סגור</button>
+  </div>
+</div>
+
 
 </div></div></div>
 
@@ -592,7 +614,7 @@ var sa=_saEntry;
 var _sysMode='maintenance';
 var _maintenanceAdmin=null;
 var _dayLocks={};
-var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,patient:'ישראל ישראלי',contact:''};
+var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:30,patient:'ישראל ישראלי',contact:''};
 var weekDayWins={
   0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}],
   1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}],
@@ -770,6 +792,9 @@ var DB={
 (function(){
 function H(pw){var h=5381;for(var i=0;i<pw.length;i++){h=((h<<5)+h)^pw.charCodeAt(i);h=h>>>0}return h.toString(16)+'_'+btoa(pw.split('').reverse().join('')).slice(0,10)}
 var _locked=false;
+var _pollInterval=null;
+var _activityTimer=null;
+var _lastActivity=Date.now();
 function lockScreen(){if(_locked)return;_locked=true;updDot()}
 function unlockScreen(){_locked=false;updDot()}
 function updDot(){var d=g('adminLockDot');if(!d)return;d.className=_locked?'lock-dot red':'lock-dot grn';d.title=_locked?'נעול — יש שינויים לא שמורים':'פתוח לעדכונים'}
@@ -974,17 +999,24 @@ function logout(){
     releaseDayLock(cu.email);
   }
   cu=null;pend=null;unlockScreen();
+  sessionStorage.removeItem('empathy_session');
+  if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
+  if(_activityTimer){clearTimeout(_activityTimer);_activityTimer=null;}
   g('lEmail').value='';g('lPw').value='';
   g('roleModal').classList.remove('on');ce();sv('vLogin');
   updSysMode();
 }
 function enterUser(){
   window._isAdmin=false;
+  sessionStorage.setItem('empathy_session',JSON.stringify({email:cu.email,role:'user'}));
+  startPolling();startActivityTimer();
   g('uAvi').textContent=ini(cu.name);g('uName').textContent=cu.name;g('uPhone').textContent=cu.phone;
   selDate=null;g('userDayDetail').style.display='none';renderUserCal();sv('vUser');
 }
 function enterAdmin(){
   window._isAdmin=true;
+  sessionStorage.setItem('empathy_session',JSON.stringify({email:cu.email,role:'admin'}));
+  startPolling();startActivityTimer();
   if(isA(cu)&&!cu.isSA)_maintenanceAdmin=cu.email;
   setUserStatus(cu,'active_admin');
   g('adminTitle').textContent='ניהול מערכת';
@@ -1193,6 +1225,7 @@ function renderConst(){
   g('setDefCap').value=cfg.defCap;
   g('setDefDur').value=cfg.defDur;
   var mw=g('setMaxWl');if(mw)mw.value=cfg.maxWl;
+  var st=g('setSessionTimeout');if(st)st.value=cfg.sessionTimeout||0;
 }
 var _activeRpt=0;
 function renderReports(){
@@ -1828,7 +1861,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.8';
+var APP_VERSION='v25.9';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -1994,6 +2027,7 @@ g('btnSaveConst').addEventListener('click',function(){
   cfg.defCap=parseInt(g('setDefCap').value)||4;
   cfg.defDur=parseInt(g('setDefDur').value)||90;
   cfg.maxWl=parseInt(g('setMaxWl').value);if(isNaN(cfg.maxWl)||cfg.maxWl<0)cfg.maxWl=4;
+  cfg.sessionTimeout=parseInt(g('setSessionTimeout').value)||0;
   sa.contact=cfg.contact;
   upSub();
   var s=g('constOk');s.textContent='הקבועים נשמרו.';s.className='fl2 ok on';setTimeout(function(){s.classList.remove('on')},3000);
@@ -2084,6 +2118,66 @@ g('btnResetUsersOk').addEventListener('click',doResetUsers);
 
 // Realtime: to be added in future version
 
+// ===== POLLING =====
+function startPolling(){
+  if(_pollInterval)clearInterval(_pollInterval);
+  _pollInterval=setInterval(async function(){
+    await DB.loadUsers();
+    await DB.loadSlots();
+    if(window._isAdmin){renderAdminUsers();renderOverview();}
+    else if(cu)renderUserCal();
+  },30000); // כל 30 שניות
+}
+
+// ===== ACTIVITY TIMEOUT =====
+function startActivityTimer(){
+  var mins=cfg.sessionTimeout||0;
+  if(!mins)return;
+  if(_activityTimer)clearTimeout(_activityTimer);
+  _activityTimer=setTimeout(function(){
+    addLog((cu?cu.name:'משתמש')+' הוצא אוטומטית (חוסר פעילות)','wa');
+    logout();
+  },mins*60*1000);
+}
+function resetActivity(){
+  _lastActivity=Date.now();
+  if(cu)startActivityTimer();
+}
+['click','keydown','touchstart'].forEach(function(ev){
+  document.addEventListener(ev,resetActivity,{passive:true});
+});
+
+// ===== SESSION RESTORE =====
+async function tryRestoreSession(){
+  var s=sessionStorage.getItem('empathy_session');
+  if(!s)return false;
+  try{
+    var sess=JSON.parse(s);
+    var u=users.find(function(u){return u.email===sess.email&&!u.blocked;});
+    if(!u)return false;
+    cu=u;
+    if(sess.role==='admin'){
+      setUserStatus(cu,'active_admin');
+      enterAdmin();
+    }else{
+      if(_sysMode==='maintenance'){sessionStorage.removeItem('empathy_session');return false;}
+      setUserStatus(cu,'active');
+      enterUser();
+    }
+    return true;
+  }catch(e){sessionStorage.removeItem('empathy_session');return false;}
+}
+
+// ===== ABOUT =====
+function openAbout(){
+  var av=g('aboutVersion');if(av)av.textContent=APP_VERSION;
+  g('aboutModal').classList.add('on');
+}
+document.querySelectorAll('.btnAbout').forEach(function(b){
+  b.addEventListener('click',openAbout);
+});
+g('btnAboutOk').addEventListener('click',function(){g('aboutModal').classList.remove('on');});
+
 // ===== INIT WITH DB — must be last =====
 (async function(){
   try{
@@ -2100,7 +2194,8 @@ g('btnResetUsersOk').addEventListener('click',doResetUsers);
     var vAdEl=g('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
     var vl=document.getElementById('vLoading');
     vl.style.display='none';vl.classList.remove('on');
-    document.getElementById('vLogin').classList.add('on');
+    var restored=await tryRestoreSession();
+    if(!restored)document.getElementById('vLogin').classList.add('on');
   }catch(e){
     var lm=document.getElementById('loadingMsg');
     if(lm)lm.textContent='שגיאה: '+e.message;
