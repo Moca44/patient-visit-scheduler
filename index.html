@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.9 | Built: 2026-03-18 13:24 (GMT+2)
+     Empathy Scheduler v25.10
+     
+     Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
+     Built with: Claude.ai (Anthropic) — claude.ai
+     License: CC BY-NC 4.0
+     
+     Repository: https://github.com/moca44/patient-visit-scheduler
+     Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
+     
+     Built: 2026-03-18 15:34 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -214,7 +223,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 </div>
 
 <div id="vUser" class="vw">
-  <div class="hband"><div class="tbar"><div><p class="ht">תיאום ביקור</p><p class="hs">בחרו תאריך והזמינו/עדכנו מקומות</p></div><div style="display:flex;gap:6px;align-items:center"><button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button><button class="bg2btn" id="btnUserOut" style="color:#CCC9F8">יציאה</button></div></div></div>
+  <div class="hband"><div class="tbar"><div><p class="ht">תיאום ביקור</p><p class="hs">בחרו תאריך והזמינו/עדכנו מקומות</p></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button><button class="bg2btn" id="btnUserOut" style="color:#CCC9F8">יציאה</button></div></div></div>
   <div class="body">
     <div id="maintenanceBanner" style="display:none;background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 12px;margin-bottom:.9rem;text-align:center">
       <div style="font-size:13px;font-weight:500;color:#A32D2D">⚠️ המערכת בתחזוקה – נא לצאת</div>
@@ -245,7 +254,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 </div>
 
 <div id="vProfile" class="vw">
-  <div class="hband"><div class="tbar"><div><p class="ht">הפרופיל שלי</p><p class="hs">פרטים ואפשרויות</p></div><div style="display:flex;gap:6px;align-items:center"><button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button><button class="bg2btn" id="btnProfBack" style="color:#CCC9F8">חזרה</button></div></div></div>
+  <div class="hband"><div class="tbar"><div><p class="ht">הפרופיל שלי</p><p class="hs">פרטים ואפשרויות</p></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button><button class="bg2btn" id="btnProfBack" style="color:#CCC9F8">חזרה</button></div></div></div>
   <div class="body">
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:.8rem">
       <div style="width:44px;height:44px;border-radius:50%;background:var(--pur3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--pur);flex-shrink:0" id="prAvi"></div>
@@ -312,11 +321,13 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         <span style="font-size:9px;color:var(--pur4);margin-right:4px" id="adminVersionStr"></span>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button>
-      <button class="bg2btn" id="btnSysMode" style="font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.3);border-radius:5px;color:#CCC9F8">עבור לפעילה</button>
-      <span class="lock-dot" id="adminLockDot"></span>
-      <button class="bg2btn" id="btnAdminOut" style="color:#CCC9F8">יציאה</button>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button>
+        <button class="bg2btn" id="btnSysMode" style="font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.3);border-radius:5px;color:#CCC9F8">עבור לפעילה</button>
+        <span class="lock-dot" id="adminLockDot"></span>
+        <button class="bg2btn" id="btnAdminOut" style="color:#CCC9F8">יציאה</button>
+      </div>
     </div>
   </div></div>
   <div class="nav">
@@ -577,18 +588,19 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 </div>
 
 <div id="aboutModal" class="ov">
-  <div class="mb">
+  <div class="mb" style="text-align:right">
     <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--pur);margin-bottom:.8rem">Empathy Scheduler</p>
-    <div style="font-size:12px;color:var(--txt2);line-height:1.8">
-      <div><b>Version:</b> <span id="aboutVersion"></span></div>
-      <div><b>Author:</b> Moshe Carmeli</div>
-      <div><b>Built with:</b> Claude.ai (Anthropic)</div>
-      <div><b>License:</b> CC BY-NC 4.0 — Free for personal, non-commercial use</div>
-      <div style="margin-top:8px"><b>Source:</b>
+    <div style="font-size:12px;color:var(--txt2);line-height:2">
+      <div><b>גרסא:</b> <span id="aboutVersion"></span></div>
+      <div><b>מחבר:</b> Moshe Carmeli</div>
+      <div><b>אימייל:</b> <span style="direction:ltr;display:inline-block">moshe.carmeli@gmail.com</span></div>
+      <div><b>נכתב בסיוע:</b> Claude.ai (Anthropic)</div>
+      <div><b>רישיון:</b> CC BY-NC 4.0 — חינמי לשימוש אישי ולא מסחרי</div>
+      <div style="margin-top:8px"><b>קוד מקור:</b>
         <a href="https://github.com/moca44/patient-visit-scheduler" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">github.com/moca44/patient-visit-scheduler</a>
       </div>
-      <div style="margin-top:4px"><b>Docs:</b>
-        <a href="https://github.com/moca44/patient-visit-scheduler/tree/main/docs" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">Documentation</a>
+      <div><b>תיעוד:</b>
+        <a href="https://github.com/moca44/patient-visit-scheduler/tree/main/docs" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">docs</a>
       </div>
     </div>
     <button class="bp" style="margin-top:1rem" id="btnAboutOk">סגור</button>
@@ -614,7 +626,7 @@ var sa=_saEntry;
 var _sysMode='maintenance';
 var _maintenanceAdmin=null;
 var _dayLocks={};
-var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:30,patient:'ישראל ישראלי',contact:''};
+var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,patient:'ישראל ישראלי',contact:''};
 var weekDayWins={
   0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}],
   1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}],
@@ -698,8 +710,13 @@ var DB={
           isAdmin:r.is_admin,isSA:r.is_sa,deletable:r.deletable,blocked:r.blocked,
           status:r.status||'inactive',contact:r.contact||''};
       });
+      // מצא SA פעיל (לא חסום)
       var saRow=users.find(function(u){return u.isSA&&!u.blocked;});
       if(saRow){sa=saRow;_saEntry=sa;}
+      else{
+        // כל ה-SA חסומים — צור ברירת מחדל זמנית
+        sa=_saEntry;
+      }
     }
   },
   async saveUser(u){
@@ -1094,8 +1111,8 @@ function renderUserSlots(dstr){
     var cls,info;
     if(myB){cls='bk';info='הזמנה שלך: '+myB.cnt+' מבקרים'}
     else if(myW){cls='wt';var pos=sd.wl.findIndex(function(x){return x.user.email===cu.email})+1;info='המתנה · מיקום '+pos+'/'+cfg.maxWl}
-    else if(!full){cls='av';info=free===1?'מקום אחד':free+' מקומות';if(wlen>0)info+=' · '+wlen+'/4 ממתינים'}
-    else{cls=wlen<4?'wt':'fu';info='מלא'+(wlen>0?' · '+wlen+'/4 ממתינים':'')}
+    else if(!full){cls='av';info=free===1?'מקום אחד':free+' מקומות';if(wlen>0)info+=' · '+wlen+' ממתינים'}
+    else{var winMaxWl2=gw(w.id).maxWl!=null?gw(w.id).maxWl:cfg.maxWl;cls=wlen<winMaxWl2?'wt':'fu';info='מלא'+(wlen>0?' · '+wlen+' ממתינים':' · אין המתנה')}
     var siCls=cls==='av'?'g':cls==='wt'?'a':cls==='bk'?'p':'r';
     var div=document.createElement('div');div.className='st '+cls;
     div.innerHTML='<div style="display:flex;align-items:center;gap:7px"><div class="si '+siCls+'"></div><div><div class="stm">'+w.start+' \u2013 '+we(w)+'</div><div class="sti">'+info+'</div></div></div>';
@@ -1246,11 +1263,27 @@ function setActiveRpt(n,refresh){
 }
 function drawReport(n){
   var el=g('reportContent');if(!el)return;
-  if(n===0)el.innerHTML=buildRptUsers();
-  else if(n===1)el.innerHTML=buildRptBookings();
-  else if(n===2)el.innerHTML=buildRptBookers();
-  else if(n===3)el.innerHTML=buildRptSchedule();
-  else if(n===4)el.innerHTML=buildRptConst();
+  var rptNames=['משתמשים','סיכום הזמנות','מזמינים','לו"ז שבועי','קבועים'];
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
+  var timeStr=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  var hdr='<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--pur3)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
+    +'<span style="font-size:13px;font-weight:500;color:var(--pur)">מערכת תיאום ביקורים · '+cfg.patient+'</span>'
+    +'<span style="font-size:11px;color:var(--txt3)">'+APP_VERSION+'</span>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:3px">'
+    +'<span style="font-size:12px;color:var(--txt2)">דו"ח: '+rptNames[n]+'</span>'
+    +'<span style="font-size:11px;color:var(--txt3)">'+dateStr+' · '+timeStr+'</span>'
+    +'</div>'
+    +'</div>';
+  var body='';
+  if(n===0)body=buildRptUsers();
+  else if(n===1)body=buildRptBookings();
+  else if(n===2)body=buildRptBookers();
+  else if(n===3)body=buildRptSchedule();
+  else if(n===4)body=buildRptConst();
+  el.innerHTML=hdr+body;
 }
 
 // ===== דו"ח משתמשים =====
@@ -1348,8 +1381,8 @@ function buildRptBookers(){
 // ===== דו"ח לו"ז שבועי =====
 function buildRptSchedule(){
   var DN2=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
-  var cols='1fr 0.8fr 0.8fr 0.8fr';
-  var hdr=rptRow(cols,['יום','שעת התחלה','משך (דק\')','מבקרים מותר'],true);
+  var cols='1fr 0.8fr 0.8fr 0.8fr 0.8fr';
+  var hdr=rptRow(cols,['יום','שעת התחלה','משך (דק\')','מבקרים מותר','ממתינים מותר'],true);
   var rows=[];
   [0,1,2,3,4,5,6].forEach(function(dow){
     var wins=weekDayWins[dow]||[];
@@ -1358,10 +1391,11 @@ function buildRptSchedule(){
         i===0?DN2[dow]:'',
         w.start,
         String(w.dur||cfg.defDur),
-        String(w.cap)
+        String(w.cap),
+        String(w.maxWl!=null?w.maxWl:cfg.maxWl)
       ]));
     });
-    if(!wins.length)rows.push(rptRow(cols,[DN2[dow],'—','—','—']));
+    if(!wins.length)rows.push(rptRow(cols,[DN2[dow],'—','—','—','—']));
   });
   return rptTable(hdr+rows.join(''));
 }
@@ -1861,7 +1895,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.9';
+var APP_VERSION='v25.10';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -1879,11 +1913,17 @@ function saveSAEdit(){
   if(!e.includes('@')||!e.includes('.')){g('saEmail').classList.add('er');g('saEmailErr').classList.add('on');return;}
   if(e===sa.email){var f=g('saFlash');f.textContent='האימייל זהה לנוכחי.';f.className='fl2 in on';setTimeout(function(){f.classList.remove('on');},2000);return;}
   if(users.find(function(u){return u.email===e&&!u.blocked})){g('saEmail').classList.add('er');g('saEmailErr').textContent='אימייל כבר קיים';g('saEmailErr').classList.add('on');return;}
-  sa.blocked=true;sa.status='inactive';
-  DB.saveUser(sa);
-  var newSA={name:'מנהל ראשי',email:e,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:sa.contact,status:'inactive',id:'sa_'+Date.now()};
-  users.push(newSA);sa=newSA;
-  DB.saveUser(newSA);
+  var oldSA=sa;
+  oldSA.blocked=true;oldSA.status='inactive';
+  var newSA={name:'מנהל ראשי',email:e,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:oldSA.contact,status:'inactive',id:'sa_'+Date.now()};
+  users.push(newSA);sa=newSA;_saEntry=newSA;
+  // שמור לDB — הישן נחסם, החדש נוצר
+  DB.saveUser(oldSA).then(function(){return DB.saveUser(newSA);}).then(function(){
+    // עדכן session להשתמש בSA החדש
+    sessionStorage.removeItem('empathy_session');
+    cu=newSA;
+    sessionStorage.setItem('empathy_session',JSON.stringify({email:newSA.email,role:'admin'}));
+  });
   g('saEmailDisplay').textContent=e;
   addLog('אימייל מנהל ראשי עודכן','info');
   var f=g('saFlash');f.textContent='האימייל עודכן. הכניסה הבאה עם: '+e;f.className='fl2 ok on';
@@ -2118,15 +2158,31 @@ g('btnResetUsersOk').addEventListener('click',doResetUsers);
 
 // Realtime: to be added in future version
 
+// ===== BEFOREUNLOAD — עדכן סטטוס בסגירת חלון =====
+window.addEventListener('beforeunload',function(){
+  if(cu){
+    // sendBeacon שולח בקשה גם כשהחלון נסגר
+    var url=SUPA_URL+'/rest/v1/users?id=eq.'+encodeURIComponent(cu.id);
+    var data=JSON.stringify({status:'inactive'});
+    navigator.sendBeacon(url+'&apikey='+SUPA_KEY,new Blob([data],{type:'application/json'}));
+  }
+});
+
 // ===== POLLING =====
 function startPolling(){
   if(_pollInterval)clearInterval(_pollInterval);
   _pollInterval=setInterval(async function(){
     await DB.loadUsers();
     await DB.loadSlots();
-    if(window._isAdmin){renderAdminUsers();renderOverview();}
-    else if(cu)renderUserCal();
-  },30000); // כל 30 שניות
+    if(window._isAdmin){
+      renderOverview();
+      // רנדר טאב פעיל
+      var activeTab=[0,1,2,3,4,5].find(function(i){var t=g('tab'+i);return t&&t.classList.contains('on');});
+      if(activeTab===3)renderAdminUsers();
+    }else if(cu){
+      renderUserCal();
+    }
+  },30000);
 }
 
 // ===== ACTIVITY TIMEOUT =====
