@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.7 | Built: 2026-03-18 11:20 (GMT+2)
+     Empathy Scheduler v25.8 | Built: 2026-03-18 11:29 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -137,13 +137,13 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 .ca{display:flex;gap:7px;margin-top:9px}
 .bcl{flex:1;padding:8px;background:none;border:1px solid var(--brd);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:var(--txt2)}
 .bde{flex:1;padding:8px;background:#791F1F;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:#FCEBEB}
-.vw{display:none}.vw.on{display:block}
+.vw{display:none}.vw.on{display:block}#vLoading.on{display:flex}
 </style>
 </head>
 <body>
 <div class="app"><div style="position:relative"><div class="card">
 
-<div id="vLoading" class="vw on" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+<div id="vLoading" class="vw on" style="min-height:100vh;align-items:center;justify-content:center">
   <div style="text-align:center;padding:2rem">
     <p style="font-family:'Playfair Display',serif;font-size:22px;color:var(--pur);margin-bottom:1rem">Empathy Scheduler</p>
     <p style="font-size:13px;color:var(--txt3);margin-bottom:1.5rem" id="loadingMsg">מתחבר למסד הנתונים...</p>
@@ -1828,7 +1828,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.7';
+var APP_VERSION='v25.8';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2088,24 +2088,18 @@ g('btnResetUsersOk').addEventListener('click',doResetUsers);
 (async function(){
   try{
     var lm=document.getElementById('loadingMsg');
-    function setMsg(m){if(lm)lm.textContent=m;console.log('[INIT]',m);}
-    setMsg('טוען הגדרות...');
+    if(lm)lm.textContent='טוען נתונים...';
     await DB.loadCfg();
-    setMsg('טוען תבנית שבועית...');
     await DB.loadWeekDayWins();
-    setMsg('טוען משתמשים...');
     await DB.loadUsers();
-    setMsg('טוען הזמנות...');
     await DB.loadSlots();
-    setMsg('טוען יומן...');
     await DB.loadDayWins();
-    setMsg('טוען לוג...');
     await DB.loadLog();
-    setMsg('מוכן!');
     upSub();updDot();updSysMode();
     var vEl=g('versionStr');if(vEl)vEl.textContent=APP_VERSION;
     var vAdEl=g('adminVersionStr');if(vAdEl)vAdEl.textContent=APP_VERSION;
-    document.getElementById('vLoading').classList.remove('on');
+    var vl=document.getElementById('vLoading');
+    vl.style.display='none';vl.classList.remove('on');
     document.getElementById('vLogin').classList.add('on');
   }catch(e){
     var lm=document.getElementById('loadingMsg');
