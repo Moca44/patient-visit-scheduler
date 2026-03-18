@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.4 | Built: 2026-03-18 02:10 (GMT+2)
+     Empathy Scheduler v25.5 | Built: 2026-03-18 10:37 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -8,7 +8,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>מערכת תיאום ביקורים</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=DM+Sans:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -580,7 +580,10 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 // ===== SUPABASE =====
 const SUPA_URL='https://yulsydrkqgehqoopuopb.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHN5ZHJrcWdlaHFvb3B1b3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODQ3ODYsImV4cCI6MjA4OTM2MDc4Nn0.TSMwUWqposup25cu9wkcqooRcXWxu0E1FXuLwGXfrq0';
-const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY,{
+  auth:{persistSession:false,autoRefreshToken:false},
+  global:{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}}
+});
 
 // ===== GLOBAL DATA (shared between DB layer and app) =====
 var SA='admin@family.com';
@@ -1818,7 +1821,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.4';
+var APP_VERSION='v25.5';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
