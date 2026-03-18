@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.12
+     Empathy Scheduler v25.13
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-18 19:35 (GMT+2)
+     Built: 2026-03-18 19:44 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -668,7 +668,7 @@ async function dbUpsert(table,data){
   if(!r.ok){var t=await r.text();throw new Error('UPSERT '+table+' failed: '+r.status+' '+t);}
 }
 async function dbDelete(table,col,val){
-  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=eq.'+encodeURIComponent(val);
+  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=eq.'+val;
   var r=await fetch(url,{method:'DELETE',headers:SUPA_HEADERS});
   if(!r.ok)throw new Error('DELETE '+table+' failed: '+r.status);
 }
@@ -981,7 +981,6 @@ function doResetUsers(){
     dbDelete('users','is_sa','false'),
     dbDeleteNeq('bookings','id','__none__'),
     dbDeleteNeq('wlist','id','__none__'),
-    dbDeleteNeq('slots_db','id','__none__'),
     dbUpsert('users',{id:'sa',name:'מנהל ראשי',email:SA,phone:'',is_admin:true,is_sa:true,deletable:false,blocked:false,pw_hash:null,contact:'',status:'inactive'})
   ]).then(function(){
     addLog('משתמשים אופסו — SA חזר לברירת מחדל','wa');
@@ -1984,7 +1983,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.12';
+var APP_VERSION='v25.13';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2281,9 +2280,9 @@ function startPolling(){
 
 // ===== ACTIVITY TIMEOUT =====
 function startActivityTimer(){
+  if(_activityTimer){clearTimeout(_activityTimer);_activityTimer=null;}
   var mins=cfg.sessionTimeout||0;
-  if(!mins)return;
-  if(_activityTimer)clearTimeout(_activityTimer);
+  if(!mins||!cu)return;
   _activityTimer=setTimeout(function(){
     addLog((cu?cu.name:'משתמש')+' הוצא אוטומטית (חוסר פעילות)','wa');
     logout();
@@ -2291,7 +2290,7 @@ function startActivityTimer(){
 }
 function resetActivity(){
   _lastActivity=Date.now();
-  if(cu)startActivityTimer();
+  if(cu&&cfg.sessionTimeout>0)startActivityTimer();
 }
 ['click','keydown','touchstart'].forEach(function(ev){
   document.addEventListener(ev,resetActivity,{passive:true});
