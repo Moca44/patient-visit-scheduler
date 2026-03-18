@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.11
+     Empathy Scheduler v25.12
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-18 18:43 (GMT+2)
+     Built: 2026-03-18 19:35 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -550,7 +550,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       <div class="fg"><label class="lbl">זמן קצוב ללא פעילות (דקות, 0=ללא הגבלה)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="30" class="fi"/></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--red2);border:1px solid var(--red3);border-radius:8px">
         <input type="checkbox" id="setDebugMode" style="width:16px;height:16px;cursor:pointer"/>
-        <label for="setDebugMode" style="font-size:12px;color:var(--red);cursor:pointer">מצב DEBUG — מציג כפתורי מחיקה כללית</label>
+        <label for="setDebugMode" style="font-size:12px;color:var(--red);cursor:pointer">מצב DEBUG — פונקציות ייחודיות לבדיקת מערכת מופעלות</label>
       </div>
       <button class="bp" id="btnSaveConst">שמור קבועים</button>
       <div id="constOk" class="fl2 ok" style="margin-top:8px"></div>
@@ -868,13 +868,27 @@ function updDebugZones(){
 }
 function doResetCalendar(){
   bookings=[];wlist=[];slotsDB={};dayWinsDB={};
+  // בנה slots ריקים לפי תבנית ל-14 ימים קרובים
+  var newSlots=[];
+  for(var i=0;i<14;i++){
+    var d=new Date(T);d.setDate(d.getDate()+i);
+    var dstr=ds(d),dow=d.getDay();
+    var wins=weekDayWins[dow]||[];
+    wins.forEach(function(w){
+      var k=sk(dstr,w.id);
+      slotsDB[k]={cap:w.cap,bk:[],wl:[]};
+      newSlots.push({id:k,date_str:dstr,win_id:w.id,cap:w.cap});
+    });
+  }
   Promise.all([
     dbDeleteNeq('bookings','id','__none__'),
     dbDeleteNeq('wlist','id','__none__'),
     dbDeleteNeq('slots_db','id','__none__'),
     dbDeleteNeq('day_wins_db','id','__none__')
   ]).then(function(){
-    addLog('יומן אופס','wa');
+    if(newSlots.length)return dbUpsert('slots_db',newSlots);
+  }).then(function(){
+    addLog('יומן אופס והוחזר לתבנית','wa');
     renderAdminCal();renderOverview();
   }).catch(function(e){console.error('Reset cal error:',e);});
   g('resetCalConfirm').style.display='none';
@@ -974,6 +988,8 @@ function doResetUsers(){
   }).catch(function(e){console.error('Reset error:',e);});
   g('resetUsersConfirm').style.display='none';
   renderAdminUsers();renderOverview();
+  // הוצא מנהל נוכחי ואכוף כניסה מחדש
+  setTimeout(function(){logout();},1500);
 }
 
 // ===== העפת משתמש =====
@@ -1001,10 +1017,13 @@ function doLogin(){
   if(!email.includes('@')||!email.includes('.')){se(null,'lErr','אנא הכנס אימייל תקין');return}
   var u=users.find(function(u){return u.email===email});
   if(!u){
-    if(email===sa.email){se(null,'lErr','כתובת זו שמורה למנהל המערכת');return}
-    g('regEmailShow').textContent=email;g('rName').value='';g('rPhone').value='';pend={email:email,_new:true};ce();sv('vReg');return
+    // בדוק אם זה SA חסום (היסטוריה)
+    var blockedSA=users.find(function(u){return u.email===email&&u.isSA&&u.blocked;});
+    if(blockedSA){se(null,'lErr','חשבון זה חסום. פנה למנהל המערכת');return;}
+    if(email===sa.email){se(null,'lErr','כתובת זו שמורה למנהל המערכת');return;}
+    g('regEmailShow').textContent=email;g('rName').value='';g('rPhone').value='';pend={email:email,_new:true};ce();sv('vReg');return;
   }
-  if(u.blocked){se(null,'lErr','חשבון זה חסום. פנה למנהל המערכת');return}
+  if(u.blocked){se(null,'lErr','חשבון זה חסום. פנה למנהל המערכת');return;}
   if(!u.pwHash){pend=u;openSetPw(u.isSA?'כניסה ראשונה':'הגדרת סיסמא',u.isSA?'מנהל ראשי':u.name);return}
   if(H(pw)!==u.pwHash){se(null,'lErr','פרטים שגויים');return}
   cu=u;afterAuth();
@@ -1901,8 +1920,9 @@ function openAdminUserEdit(email){
     bb.style.marginTop='6px';
     bb.style.display='block';
   }
-  // כפתור מחיקה — רק אם ניתן למחיקה ולא חסום SA
-  g('btnAuDelete').style.display=u.deletable===false?'none':'block';
+  // כפתור מחיקה — רק אם ניתן למחיקה ולא המשתמש הנוכחי
+  var canDelete=u.deletable!==false&&(!cu||cu.email!==u.email);
+  g('btnAuDelete').style.display=canDelete?'block':'none';
   g('auFlash').classList.remove('on');
   document.querySelectorAll('#tp3 .fe').forEach(function(e){e.classList.remove('on')});
   document.querySelectorAll('#tp3 .fi').forEach(function(f){f.classList.remove('er')});
@@ -1935,9 +1955,36 @@ function saveAdminUserEdit(){
 function toggleAdmin(email){var u=users.find(function(u){return u.email===email});if(!u)return;u.isAdmin=!u.isAdmin;addLog(u.name+' '+(u.isAdmin?'מונה כמנהל':'הוסרה הרשאה'),'info');DB.saveUser(u);renderAdminUsers()}
 function rstPw(email){var u=users.find(function(u){return u.email===email});if(!u)return;u.pwHash=null;addLog('סיסמת '+u.name+' אופסה','wa');DB.saveUser(u);renderAdminUsers()}
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
-function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
+function rmUser(email){
+  var u=users.find(function(u){return u.email===email});
+  if(!u)return;
+  if(!u.deletable)return; // SA מקורי — לא ניתן למחיקה
+  if(cu&&cu.email===email){alert('לא ניתן למחוק את המשתמש המחובר כרגע.');return;}
+  // מחק הזמנות מ-RAM ומ-DB
+  var bkIds=[],wlIds=[];
+  bookings.filter(function(b){return b.user.email===email;}).forEach(function(b){
+    var sd=slotsDB[sk(b.ds,b.twId)];
+    if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email;});promote(b.ds,b.twId);}
+    bkIds.push(b.id);
+  });
+  wlist.filter(function(w){return w.user.email===email;}).forEach(function(w){
+    var sd=slotsDB[sk(w.ds,w.twId)];
+    if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email;});
+    wlIds.push(w.id);
+  });
+  bookings=bookings.filter(function(b){return b.user.email!==email;});
+  wlist=wlist.filter(function(w){return w.user.email!==email;});
+  users=users.filter(function(u){return u.email!==email;});
+  // שמור ב-DB
+  var ops=[DB.deleteUser(u.id||u.email)];
+  bkIds.forEach(function(id){ops.push(DB.deleteBooking(id));});
+  wlIds.forEach(function(id){ops.push(DB.deleteWlist(id));});
+  Promise.all(ops).catch(function(e){console.error('rmUser DB error:',e);});
+  addLog('משתמש הוסר: '+u.name,'wa');
+  renderAdminUsers();renderOverview();
+}
 
-var APP_VERSION='v25.11';
+var APP_VERSION='v25.12';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
