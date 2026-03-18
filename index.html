@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.13
+     Empathy Scheduler v25.14
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-18 19:44 (GMT+2)
+     Built: 2026-03-18 20:03 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -981,7 +981,7 @@ function doResetUsers(){
     dbDelete('users','is_sa','false'),
     dbDeleteNeq('bookings','id','__none__'),
     dbDeleteNeq('wlist','id','__none__'),
-    dbUpsert('users',{id:'sa',name:'מנהל ראשי',email:SA,phone:'',is_admin:true,is_sa:true,deletable:false,blocked:false,pw_hash:null,contact:'',status:'inactive'})
+    dbUpdate('users',{blocked:false,pw_hash:null,status:'inactive',email:SA},'id','sa')
   ]).then(function(){
     addLog('משתמשים אופסו — SA חזר לברירת מחדל','wa');
   }).catch(function(e){console.error('Reset error:',e);});
@@ -1983,7 +1983,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.13';
+var APP_VERSION='v25.14';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
