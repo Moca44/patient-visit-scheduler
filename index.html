@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.10
+     Empathy Scheduler v25.11
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-18 15:34 (GMT+2)
+     Built: 2026-03-18 18:43 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -322,8 +322,8 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button>
       <div style="display:flex;align-items:center;gap:6px">
-        <button class="bg2btn btnAbout" style="font-size:10px;color:#CCC9F8">About</button>
         <button class="bg2btn" id="btnSysMode" style="font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.3);border-radius:5px;color:#CCC9F8">עבור לפעילה</button>
         <span class="lock-dot" id="adminLockDot"></span>
         <button class="bg2btn" id="btnAdminOut" style="color:#CCC9F8">יציאה</button>
@@ -373,6 +373,14 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
     </div>
     <div id="tp1" style="display:none">
       <p class="sl" id="calHdr"></p>
+      <div id="debugCalZone" style="display:none;margin-bottom:10px;padding:9px 12px;background:var(--red2);border:1px solid var(--red3);border-radius:8px">
+        <div style="font-size:12px;color:var(--red);font-weight:500;margin-bottom:6px">🔧 DEBUG</div>
+        <button class="bd" style="margin-top:0;width:auto;padding:7px 14px;font-size:12px" id="btnResetCal">🗑 אפס יומן (מחק כל ההזמנות)</button>
+        <div id="resetCalConfirm" style="display:none;margin-top:8px">
+          <div style="font-size:12px;color:var(--txt2);margin-bottom:8px">מחיקת כל ההזמנות, רשימות המתנה וחלונות היומן. לא ניתן לבטל.</div>
+          <div style="display:flex;gap:7px"><button class="bcl" id="btnResetCalCancel">ביטול</button><button class="bde" id="btnResetCalOk">כן, אפס</button></div>
+        </div>
+      </div>
       <div class="ch"><span>א'</span><span>ב'</span><span>ג'</span><span>ד'</span><span>ה'</span><span>ו'</span><span>ש'</span></div>
       <div class="cg" id="adminCal"></div>
       <div id="adminDayDetail" style="display:none">
@@ -540,6 +548,10 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       <div class="fg"><label class="lbl">משך חלון בדקות (ברירת מחדל)</label><input id="setDefDur" type="number" min="15" max="240" value="90" class="fi"/></div>
       <div class="fg"><label class="lbl">מקסימום ממתינים לחלון (ברירת מחדל)</label><input id="setMaxWl" type="number" min="0" max="20" value="4" class="fi"/></div>
       <div class="fg"><label class="lbl">זמן קצוב ללא פעילות (דקות, 0=ללא הגבלה)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="30" class="fi"/></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--red2);border:1px solid var(--red3);border-radius:8px">
+        <input type="checkbox" id="setDebugMode" style="width:16px;height:16px;cursor:pointer"/>
+        <label for="setDebugMode" style="font-size:12px;color:var(--red);cursor:pointer">מצב DEBUG — מציג כפתורי מחיקה כללית</label>
+      </div>
       <button class="bp" id="btnSaveConst">שמור קבועים</button>
       <div id="constOk" class="fl2 ok" style="margin-top:8px"></div>
     </div>
@@ -626,7 +638,7 @@ var sa=_saEntry;
 var _sysMode='maintenance';
 var _maintenanceAdmin=null;
 var _dayLocks={};
-var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,patient:'ישראל ישראלי',contact:''};
+var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,debugMode:false,patient:'ישראל ישראלי',contact:''};
 var weekDayWins={
   0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}],
   1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}],
@@ -664,6 +676,11 @@ async function dbDeleteNeq(table,col,val){
   var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=neq.'+encodeURIComponent(val);
   var r=await fetch(url,{method:'DELETE',headers:SUPA_HEADERS});
   if(!r.ok)throw new Error('DELETE '+table+' failed: '+r.status);
+}
+async function dbUpdate(table,data,col,val){
+  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=eq.'+encodeURIComponent(val);
+  var r=await fetch(url,{method:'PATCH',headers:SUPA_HEADERS,body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('UPDATE '+table+' failed: '+r.status);
 }
 
 var DB={
@@ -843,6 +860,25 @@ function isA(u){return u&&(u.isSA||u.isAdmin)}
 function addLog(m,t){lg.unshift({m:m,t:t||'info',ts:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});DB.saveLog(m,t||'info');}
 
 // ===== מצב מערכת =====
+function updDebugZones(){
+  var show=cfg.debugMode;
+  var dz=g('debugCalZone');if(dz)dz.style.display=show?'block':'none';
+  var rz=g('resetUsersZone');
+  if(rz)rz.style.display=(show&&_sysMode==='maintenance')?'block':'none';
+}
+function doResetCalendar(){
+  bookings=[];wlist=[];slotsDB={};dayWinsDB={};
+  Promise.all([
+    dbDeleteNeq('bookings','id','__none__'),
+    dbDeleteNeq('wlist','id','__none__'),
+    dbDeleteNeq('slots_db','id','__none__'),
+    dbDeleteNeq('day_wins_db','id','__none__')
+  ]).then(function(){
+    addLog('יומן אופס','wa');
+    renderAdminCal();renderOverview();
+  }).catch(function(e){console.error('Reset cal error:',e);});
+  g('resetCalConfirm').style.display='none';
+}
 function updSysMode(){
   var isMaint=_sysMode==='maintenance';
   var dotColor=isMaint?'#EF9F27':'#1D9E75';
@@ -924,14 +960,18 @@ function doResetUsers(){
   bookings=[];wlist=[];
   Object.keys(slotsDB).forEach(function(k){slotsDB[k].bk=[];slotsDB[k].wl=[];});
   var newSA={name:'מנהל ראשי',email:SA,phone:'',isAdmin:true,isSA:true,deletable:false,blocked:false,pwHash:null,contact:'',status:'inactive',id:'sa'};
-  users=[newSA];sa=newSA;
+  users=[newSA];sa=newSA;_saEntry=newSA;
   _maintenanceAdmin=cu?cu.email:null;
-  // DB: delete all non-SA users, bookings, wlist
-  supa.from('users').delete().eq('is_sa',false);
-  supa.from('users').update({blocked:false,pw_hash:null,status:'inactive'}).eq('id','sa');
-  supa.from('bookings').delete().neq('id','__none__');
-  supa.from('wlist').delete().neq('id','__none__');
-  addLog('משתמשים אופסו — SA חזר לברירת מחדל','wa');
+  // DB: מחק כל משתמשים שאינם SA, אפס הזמנות
+  Promise.all([
+    dbDelete('users','is_sa','false'),
+    dbDeleteNeq('bookings','id','__none__'),
+    dbDeleteNeq('wlist','id','__none__'),
+    dbDeleteNeq('slots_db','id','__none__'),
+    dbUpsert('users',{id:'sa',name:'מנהל ראשי',email:SA,phone:'',is_admin:true,is_sa:true,deletable:false,blocked:false,pw_hash:null,contact:'',status:'inactive'})
+  ]).then(function(){
+    addLog('משתמשים אופסו — SA חזר לברירת מחדל','wa');
+  }).catch(function(e){console.error('Reset error:',e);});
   g('resetUsersConfirm').style.display='none';
   renderAdminUsers();renderOverview();
 }
@@ -1243,6 +1283,8 @@ function renderConst(){
   g('setDefDur').value=cfg.defDur;
   var mw=g('setMaxWl');if(mw)mw.value=cfg.maxWl;
   var st=g('setSessionTimeout');if(st)st.value=cfg.sessionTimeout||0;
+  var dm=g('setDebugMode');if(dm)dm.checked=cfg.debugMode||false;
+  updDebugZones();
 }
 var _activeRpt=0;
 function renderReports(){
@@ -1251,7 +1293,7 @@ function renderReports(){
   var rptFrom=g('rptFrom');var rptTo=g('rptTo');
   if(rptFrom&&!rptFrom.value)rptFrom.value=todayStr;
   if(rptTo&&!rptTo.value)rptTo.value=todayStr;
-  setActiveRpt(_activeRpt,false);
+  setActiveRpt(_activeRpt,true);
 }
 function setActiveRpt(n,refresh){
   _activeRpt=n;
@@ -1288,7 +1330,7 @@ function drawReport(n){
 
 // ===== דו"ח משתמשים =====
 function buildRptUsers(){
-  var list=users.filter(function(u){return!u.isSA||!u.blocked});
+  var list=users.filter(function(u){return!(u.isSA&&!u.blocked)});
   if(!list.length)return'<p style="font-size:12px;color:#888899;font-style:italic;padding:.8rem 0;text-align:center">אין משתמשים</p>';
   var cols='1fr 1fr 1.4fr 0.6fr 0.7fr 0.4fr 0.5fr 0.5fr 0.5fr';
   var hdr=rptRow(cols,['שם','טלפון','אימייל','הרשאה','סטטוס','חסום','ביקורים<br>מאושרים','מבקרים<br>מאושרים','ממתינים'],true);
@@ -1810,7 +1852,7 @@ function renderAdminUsers(){
   var np=g('aUserNewPanel');if(np)np.style.display='none';
   var sp2=g('aSAEditPanel');if(sp2)sp2.style.display='none';
   // הצג איפוס משתמשים רק ברשימה + מצב תחזוקה
-  var rz=g('resetUsersZone');if(rz)rz.style.display=(_sysMode==='maintenance')?'block':'none';
+  var rz=g('resetUsersZone');if(rz)rz.style.display=(cfg.debugMode&&_sysMode==='maintenance')?'block':'none';
   // משתמשים רגילים + SA חסומים (היסטוריה)
   var listUsers=users.filter(function(u){return!u.isSA||(u.isSA&&u.blocked)});
   el.innerHTML=listUsers.length===0?'<p style="font-size:12px;color:#888899;font-style:italic;padding:.8rem 0;text-align:center">אין משתמשים</p>'
@@ -1895,7 +1937,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.10';
+var APP_VERSION='v25.11';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2068,6 +2110,8 @@ g('btnSaveConst').addEventListener('click',function(){
   cfg.defDur=parseInt(g('setDefDur').value)||90;
   cfg.maxWl=parseInt(g('setMaxWl').value);if(isNaN(cfg.maxWl)||cfg.maxWl<0)cfg.maxWl=4;
   cfg.sessionTimeout=parseInt(g('setSessionTimeout').value)||0;
+  cfg.debugMode=g('setDebugMode')?g('setDebugMode').checked:false;
+  updDebugZones();
   sa.contact=cfg.contact;
   upSub();
   var s=g('constOk');s.textContent='הקבועים נשמרו.';s.className='fl2 ok on';setTimeout(function(){s.classList.remove('on')},3000);
@@ -2155,6 +2199,9 @@ g('btnAuDelete').addEventListener('click',function(){if(!confirm('האם למח�
 g('btnResetUsers').addEventListener('click',function(){g('resetUsersConfirm').style.display='block';});
 g('btnResetUsersCancel').addEventListener('click',function(){g('resetUsersConfirm').style.display='none';});
 g('btnResetUsersOk').addEventListener('click',doResetUsers);
+g('btnResetCal').addEventListener('click',function(){g('resetCalConfirm').style.display='block';});
+g('btnResetCalCancel').addEventListener('click',function(){g('resetCalConfirm').style.display='none';});
+g('btnResetCalOk').addEventListener('click',doResetCalendar);
 
 // Realtime: to be added in future version
 
