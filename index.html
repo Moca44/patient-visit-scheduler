@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.3 | Built: 2026-03-18 01:51 (GMT+2)
+     Empathy Scheduler v25.4 | Built: 2026-03-18 02:10 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -756,6 +756,7 @@ var DB={
   }
 };
 </script>
+<script>
 (function(){
 function H(pw){var h=5381;for(var i=0;i<pw.length;i++){h=((h<<5)+h)^pw.charCodeAt(i);h=h>>>0}return h.toString(16)+'_'+btoa(pw.split('').reverse().join('')).slice(0,10)}
 var _locked=false;
@@ -1817,7 +1818,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.3';
+var APP_VERSION='v25.4';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
