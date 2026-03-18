@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.5 | Built: 2026-03-18 10:37 (GMT+2)
+     Empathy Scheduler v25.6 | Built: 2026-03-18 10:52 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -580,10 +580,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 // ===== SUPABASE =====
 const SUPA_URL='https://yulsydrkqgehqoopuopb.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHN5ZHJrcWdlaHFvb3B1b3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODQ3ODYsImV4cCI6MjA4OTM2MDc4Nn0.TSMwUWqposup25cu9wkcqooRcXWxu0E1FXuLwGXfrq0';
-const supa=supabase.createClient(SUPA_URL,SUPA_KEY,{
-  auth:{persistSession:false,autoRefreshToken:false},
-  global:{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}}
-});
+const supa=null; // Supabase client replaced by direct fetch
 
 // ===== GLOBAL DATA (shared between DB layer and app) =====
 var SA='admin@family.com';
@@ -610,26 +607,49 @@ var _settingsChanged=false;
 var slotsDB={};
 var dayWinsDB={};
 
-// ===== DB LAYER =====
+// ===== DB LAYER — direct REST fetch (no Supabase client) =====
+var SUPA_HEADERS={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+
+async function dbGet(table,params){
+  var url=SUPA_URL+'/rest/v1/'+table+(params?'?'+params:'');
+  var r=await fetch(url,{headers:SUPA_HEADERS});
+  if(!r.ok)throw new Error('GET '+table+' failed: '+r.status);
+  return r.json();
+}
+async function dbUpsert(table,data){
+  var url=SUPA_URL+'/rest/v1/'+table;
+  var r=await fetch(url,{method:'POST',headers:Object.assign({},SUPA_HEADERS,{'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(data)});
+  if(!r.ok){var t=await r.text();throw new Error('UPSERT '+table+' failed: '+r.status+' '+t);}
+}
+async function dbDelete(table,col,val){
+  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=eq.'+encodeURIComponent(val);
+  var r=await fetch(url,{method:'DELETE',headers:SUPA_HEADERS});
+  if(!r.ok)throw new Error('DELETE '+table+' failed: '+r.status);
+}
+async function dbDeleteNeq(table,col,val){
+  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=neq.'+encodeURIComponent(val);
+  var r=await fetch(url,{method:'DELETE',headers:SUPA_HEADERS});
+  if(!r.ok)throw new Error('DELETE '+table+' failed: '+r.status);
+}
+
 var DB={
-  // --- CFG ---
   async loadCfg(){
-    var {data}=await supa.from('cfg').select('*').eq('id',1).single();
-    if(data){
-      cfg.patient=data.patient||cfg.patient;
-      cfg.contact=data.contact||'';
-      cfg.defCap=data.def_cap||4;
-      cfg.defDur=data.def_dur||90;
-      cfg.maxWl=data.max_wl||4;
-      _sysMode=data.sys_mode||'maintenance';
+    var data=await dbGet('cfg','id=eq.1');
+    if(data&&data[0]){
+      var r=data[0];
+      cfg.patient=r.patient||cfg.patient;
+      cfg.contact=r.contact||'';
+      cfg.defCap=r.def_cap||4;
+      cfg.defDur=r.def_dur||90;
+      cfg.maxWl=r.max_wl||4;
+      _sysMode=r.sys_mode||'maintenance';
     }
   },
   async saveCfg(){
-    await supa.from('cfg').upsert({id:1,patient:cfg.patient,contact:cfg.contact,def_cap:cfg.defCap,def_dur:cfg.defDur,max_wl:cfg.maxWl,sys_mode:_sysMode});
+    await dbUpsert('cfg',{id:1,patient:cfg.patient,contact:cfg.contact,def_cap:cfg.defCap,def_dur:cfg.defDur,max_wl:cfg.maxWl,sys_mode:_sysMode});
   },
-  // --- WEEK DAY WINS ---
   async loadWeekDayWins(){
-    var {data}=await supa.from('week_day_wins').select('*').order('dow').order('sort_order');
+    var data=await dbGet('week_day_wins','order=dow,sort_order');
     if(data&&data.length){
       weekDayWins={};
       data.forEach(function(r){
@@ -639,18 +659,17 @@ var DB={
     }
   },
   async saveWeekDayWins(){
-    await supa.from('week_day_wins').delete().neq('id','__none__');
+    await dbDeleteNeq('week_day_wins','id','__none__');
     var rows=[];
     Object.keys(weekDayWins).forEach(function(dow){
       (weekDayWins[dow]||[]).forEach(function(w,i){
         rows.push({id:w.id,dow:parseInt(dow),start_time:w.start,cap:w.cap,dur:w.dur||cfg.defDur,max_wl:w.maxWl!=null?w.maxWl:null,sort_order:i});
       });
     });
-    if(rows.length)await supa.from('week_day_wins').upsert(rows);
+    if(rows.length)await dbUpsert('week_day_wins',rows);
   },
-  // --- USERS ---
   async loadUsers(){
-    var {data}=await supa.from('users').select('*');
+    var data=await dbGet('users','');
     if(data&&data.length){
       users=data.map(function(r){
         return{id:r.id,name:r.name,phone:r.phone||'',email:r.email,pwHash:r.pw_hash,
@@ -658,28 +677,23 @@ var DB={
           status:r.status||'inactive',contact:r.contact||''};
       });
       var saRow=users.find(function(u){return u.isSA&&!u.blocked;});
-      if(saRow)sa=saRow;
-      _saEntry=sa;
+      if(saRow){sa=saRow;_saEntry=sa;}
     }
   },
   async saveUser(u){
-    await supa.from('users').upsert({id:u.id,name:u.name,phone:u.phone||'',email:u.email,
+    await dbUpsert('users',{id:u.id,name:u.name,phone:u.phone||'',email:u.email,
       pw_hash:u.pwHash,is_admin:u.isAdmin,is_sa:u.isSA,deletable:u.deletable,
       blocked:u.blocked,status:u.status||'inactive',contact:u.contact||''});
   },
-  async deleteUser(id){
-    await supa.from('users').delete().eq('id',id);
-  },
-  // --- SLOTS / BOOKINGS / WLIST ---
+  async deleteUser(id){await dbDelete('users','id',id);},
   async loadSlots(){
-    var {data:slots}=await supa.from('slots_db').select('*');
-    var {data:bks}=await supa.from('bookings').select('*');
-    var {data:wls}=await supa.from('wlist').select('*');
-    slotsDB={};
+    var slots=await dbGet('slots_db','');
+    var bks=await dbGet('bookings','');
+    var wls=await dbGet('wlist','');
+    slotsDB={};bookings=[];wlist=[];
     if(slots)slots.forEach(function(r){
       var k=r.date_str+'_'+r.win_id;
-      if(!slotsDB[k])slotsDB[k]={cap:r.cap,bk:[],wl:[]};
-      slotsDB[k].cap=r.cap;
+      slotsDB[k]={cap:r.cap,bk:[],wl:[]};
     });
     if(bks)bks.forEach(function(r){
       var k=r.date_str+'_'+r.win_id;
@@ -700,27 +714,22 @@ var DB={
   },
   async saveSlot(dstr,wid){
     var k=dstr+'_'+wid;var sd=slotsDB[k];if(!sd)return;
-    await supa.from('slots_db').upsert({id:k,date_str:dstr,win_id:wid,cap:sd.cap});
+    await dbUpsert('slots_db',{id:k,date_str:dstr,win_id:wid,cap:sd.cap});
   },
   async saveBooking(entry){
-    await supa.from('bookings').upsert({id:String(entry.id),user_id:entry.user.id||entry.user.email,
+    await dbUpsert('bookings',{id:String(entry.id),user_id:entry.user.id||entry.user.email,
       user_name:entry.user.name,user_email:entry.user.email,
       date_str:entry.ds,win_id:entry.twId,cnt:entry.cnt,status:'ok'});
   },
-  async deleteBooking(id){
-    await supa.from('bookings').delete().eq('id',String(id));
-  },
+  async deleteBooking(id){await dbDelete('bookings','id',String(id));},
   async saveWlist(entry){
-    await supa.from('wlist').upsert({id:String(entry.id),user_id:entry.user.id||entry.user.email,
+    await dbUpsert('wlist',{id:String(entry.id),user_id:entry.user.id||entry.user.email,
       user_name:entry.user.name,user_email:entry.user.email,
       date_str:entry.ds,win_id:entry.twId,cnt:entry.cnt});
   },
-  async deleteWlist(id){
-    await supa.from('wlist').delete().eq('id',String(id));
-  },
-  // --- DAY WINS OVERRIDE ---
+  async deleteWlist(id){await dbDelete('wlist','id',String(id));},
   async loadDayWins(){
-    var {data}=await supa.from('day_wins_db').select('*').order('date_str').order('sort_order');
+    var data=await dbGet('day_wins_db','order=date_str,sort_order');
     if(data&&data.length){
       dayWinsDB={};
       data.forEach(function(r){
@@ -730,25 +739,23 @@ var DB={
     }
   },
   async saveDayWins(dstr){
-    await supa.from('day_wins_db').delete().eq('date_str',dstr);
+    await dbDelete('day_wins_db','date_str',dstr);
     var wins=dayWinsDB[dstr]||[];
     var rows=wins.map(function(w,i){
       return{id:dstr+'_'+w.id,date_str:dstr,win_id:w.id,start_time:w.start,cap:w.cap,dur:w.dur||cfg.defDur,sort_order:i};
     });
-    if(rows.length)await supa.from('day_wins_db').upsert(rows);
+    if(rows.length)await dbUpsert('day_wins_db',rows);
   },
-  // --- LOG ---
   async saveLog(msg,type){
-    await supa.from('activity_log').insert({message:msg,log_type:type||'info'});
+    await dbUpsert('activity_log',{message:msg,log_type:type||'info'});
   },
   async loadLog(){
-    var {data}=await supa.from('activity_log').select('*').order('created_at',{ascending:false}).limit(200);
+    var data=await dbGet('activity_log','order=created_at.desc&limit=200');
     if(data)lg=data.map(function(r){
       var t=new Date(r.created_at);
       return{m:r.message,t:r.log_type,ts:t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})};
     });
   },
-  // --- LOAD ALL ---
   async loadAll(){
     await DB.loadCfg();
     await DB.loadWeekDayWins();
@@ -1821,7 +1828,7 @@ function rstPw(email){var u=users.find(function(u){return u.email===email});if(!
 function rstSA(){sa.pwHash=null;addLog('סיסמת מנהל ראשי אופסה','wa');DB.saveUser(sa);renderAdminUsers()}
 function rmUser(email){var u=users.find(function(u){return u.email===email});if(!u||u.isSA)return;bookings.filter(function(b){return b.user.email===email}).forEach(function(b){var sd=slotsDB[sk(b.ds,b.twId)];if(sd){sd.bk=sd.bk.filter(function(x){return x.user.email!==email});promote(b.ds,b.twId)}DB.deleteBooking(b.id);});wlist.filter(function(w){return w.user.email===email}).forEach(function(w){var sd=slotsDB[sk(w.ds,w.twId)];if(sd)sd.wl=sd.wl.filter(function(x){return x.user.email!==email});DB.deleteWlist(w.id);});bookings=bookings.filter(function(b){return b.user.email!==email});wlist=wlist.filter(function(w){return w.user.email!==email});users=users.filter(function(u){return u.email!==email});DB.deleteUser(u.id||u.email);addLog('משתמש הוסר: '+u.name,'wa');renderAdminUsers();renderOverview()}
 
-var APP_VERSION='v25.5';
+var APP_VERSION='v25.6';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2075,24 +2082,7 @@ g('btnResetUsers').addEventListener('click',function(){g('resetUsersConfirm').st
 g('btnResetUsersCancel').addEventListener('click',function(){g('resetUsersConfirm').style.display='none';});
 g('btnResetUsersOk').addEventListener('click',doResetUsers);
 
-// ===== REALTIME =====
-// Live sync: when another user makes a booking, refresh automatically
-supa.channel('public:bookings')
-  .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},function(payload){
-    // reload slots and re-render visible screens
-    DB.loadSlots().then(function(){
-      if(cu&&!window._isAdmin)renderUserCal();
-      if(window._isAdmin)renderOverview();
-    });
-  })
-  .subscribe();
-supa.channel('public:users')
-  .on('postgres_changes',{event:'*',schema:'public',table:'users'},function(payload){
-    DB.loadUsers().then(function(){
-      if(window._isAdmin){renderAdminUsers();renderOverview();}
-    });
-  })
-  .subscribe();
+// Realtime: to be added in future version
 
 // ===== INIT WITH DB — must be last =====
 (async function(){
