@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.21
+     Empathy Scheduler v25.23
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 10:44 (GMT+2)
+     Built: 2026-03-19 14:23 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -2019,7 +2019,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.21';
+var APP_VERSION='v25.23';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2109,6 +2109,7 @@ function toggleBlock(email){
   renderAdminUsers();
 }
 function openNewUser(){
+  console.log('[DEBUG] openNewUser called');
   g('nuName').value='';g('nuPhone').value='';g('nuEmail').value='';g('nuPw').value='';g('nuPwConf').value='';g('nuIsAdmin').checked=false;
   document.querySelectorAll('#aUserNewPanel .fe').forEach(function(e){e.classList.remove('on')});
   document.querySelectorAll('#aUserNewPanel .fi').forEach(function(f){f.classList.remove('er')});
@@ -2117,7 +2118,19 @@ function openNewUser(){
   var h=g('nuPwHint');if(h)h.textContent='';
   g('aUsersListView').style.display='none';
   g('aUserEditPanel').style.display='none';
-  g('aUserNewPanel').style.display='block';var _rz=g('resetUsersZone');if(_rz)_rz.style.display='none';
+  g('aUserNewPanel').style.display='block';
+  var _rz=g('resetUsersZone');if(_rz)_rz.style.display='none';
+  // observe for unexpected close
+  var obs=new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if(m.attributeName==='style'&&g('aUserNewPanel').style.display==='none'){
+        var stack=new Error().stack.split('\n')[2]||'unknown';
+        addLog('[DEBUG] panel closed by: '+stack,'wa');
+      }
+    });
+  });
+  obs.observe(g('aUserNewPanel'),{attributes:true,attributeFilter:['style']});
+  setTimeout(function(){obs.disconnect();},60000);
 }
 function saveNewUser(){
   var n=g('nuName').value.trim(),p=g('nuPhone').value.trim(),e=g('nuEmail').value.trim(),pw=g('nuPw').value,conf=g('nuPwConf').value;
