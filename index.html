@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.25
+     Empathy Scheduler v25.27
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 16:09 (GMT+2)
+     Built: 2026-03-19 20:05 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -21,6 +21,18 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=DM+Sans:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
+@media print{
+  .no-print,.hband,.nav,button{display:none!important}
+  .rpt-hdr{border-bottom:2px solid #999!important}
+  .rpt-hdr span{color:#000!important}
+  .rpt-tbl{font-size:10pt;width:100%}
+  .rpt-tbl th,.rpt-tbl td{border:1px solid #888!important;padding:3px 5px!important;color:#000!important;background:#fff!important}
+  .rpt-tbl thead{display:table-header-group}
+  body,#vAdmin,#tp5{background:#fff!important;display:block!important}
+  .vw{display:none!important}
+  #vAdmin.vw.on{display:block!important}
+  #tp5{display:block!important}
+}
 :root{--bg:#fff;--bg2:#f5f5f7;--txt:#1a1a2e;--txt2:#555566;--txt3:#888899;--brd:#d0d0dc;--brd2:#b0b0c0;--pur:#3C3489;--pur2:#534AB7;--pur3:#EEEDFE;--pur4:#AFA9EC;--grn:#0F6E56;--grn2:#E1F5EE;--grn3:#1D9E75;--red:#A32D2D;--red2:#FCEBEB;--red3:#F09595;--amb:#854F0B;--amb2:#FAEEDA;--amb3:#BA7517}
 body{background:#eeeef5;font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:1rem}
 @media(max-width:480px){body{padding:0;align-items:stretch;background:var(--bg)}}
@@ -457,7 +469,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         <div style="font-size:12px;color:var(--red);font-weight:500;margin-bottom:6px">אזור תחזוקה</div>
         <button class="bd" style="margin-top:0;width:auto;padding:7px 14px;font-size:12px" id="btnResetUsers">🗑 מחק כל המשתמשים והחזר SA לברירת מחדל</button>
         <div id="resetUsersConfirm" style="display:none;margin-top:8px">
-          <div style="font-size:12px;color:var(--txt2);margin-bottom:8px;line-height:1.5">פעולה זו תמחק את כל המשתמשים ותחזיר את SA ל-admin@family.com. לא ניתן לבטל.</div>
+          <div style="font-size:12px;color:var(--txt2);margin-bottom:8px;line-height:1.5">פעולה זו תמחק את כל המשתמשים ותחזיר את SA ל<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7b561a1f1612153b1d1a1612170255181416">[email&#160;protected]</a>. לא ניתן לבטל.</div>
           <div style="display:flex;gap:7px"><button class="bcl" id="btnResetUsersCancel">ביטול</button><button class="bde" id="btnResetUsersOk">כן, אפס</button></div>
         </div>
       </div>
@@ -633,7 +645,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
     <div style="font-size:12px;color:var(--txt2);line-height:2">
       <div><b>גרסא:</b> <span id="aboutVersion"></span></div>
       <div><b>מחבר:</b> Moshe Carmeli</div>
-      <div><b>אימייל:</b> <span style="direction:ltr;display:inline-block">moshe.carmeli@gmail.com</span></div>
+      <div><b>אימייל:</b> <span style="direction:ltr;display:inline-block"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5f32302c373a713c3e2d323a33361f38323e3633713c3032">[email&#160;protected]</a></span></div>
       <div><b>נכתב בסיוע:</b> Claude.ai (Anthropic)</div>
       <div><b>רישיון:</b> CC BY-NC 4.0 — חינמי לשימוש אישי ולא מסחרי</div>
       <div style="margin-top:8px"><b>קוד מקור:</b>
@@ -650,7 +662,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
 
 </div></div></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ===== SUPABASE =====
 const SUPA_URL='https://yulsydrkqgehqoopuopb.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bHN5ZHJrcWdlaHFvb3B1b3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODQ3ODYsImV4cCI6MjA4OTM2MDc4Nn0.TSMwUWqposup25cu9wkcqooRcXWxu0E1FXuLwGXfrq0';
@@ -849,7 +861,23 @@ var DB={
       return{m:r.message,t:r.log_type,ts:t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})};
     });
   },
+  async initDB(){
+    var cfgData=await dbGet('cfg','id=eq.1');
+    if(!cfgData||!cfgData.length){
+      await dbUpsert('cfg',{id:1,patient:'ישראל ישראלי',contact:'',def_cap:4,def_dur:90,
+        max_wl:4,sys_mode:'maintenance',session_timeout:15,warning_percent:80,
+        debug_mode:false,booking_days:14,report_page_size:15,report_print_size:40,
+        template_updated_at:new Date().toISOString()});
+    }
+    var saData=await dbGet('users','id=eq.sa');
+    if(!saData||!saData.length){
+      await dbUpsert('users',{id:'sa',name:'מנהל ראשי',email:'admin@family.com',
+        phone:'',pw_hash:null,is_admin:true,is_sa:true,deletable:false,
+        blocked:false,status:'inactive',contact:''});
+    }
+  },
   async loadAll(){
+    await DB.initDB();
     await DB.loadCfg();
     await DB.loadWeekDayWins();
     await DB.loadUsers();
@@ -907,6 +935,13 @@ function isA(u){return u&&(u.isSA||u.isAdmin)}
 function addLog(m,t){lg.unshift({m:m,t:t||'info',ts:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});DB.saveLog(m,t||'info');}
 
 // ===== מצב מערכת =====
+var _confirmCb=null;
+function showConfirm(title,msg,onOk){
+  _confirmCb=onOk;
+  var t=g('confirmTitle');if(t)t.textContent=title;
+  var m=g('confirmMsg');if(m)m.textContent=msg;
+  var modal=g('confirmModal');if(modal)modal.classList.add('on');
+}
 function updDebugZones(){
   var show=cfg.debugMode;
   var dz=g('debugCalZone');if(dz)dz.style.display=show?'block':'none';
@@ -1357,6 +1392,11 @@ function renderConst(){
   g('setContact').value=cfg.contact||'';
   g('setDefCap').value=cfg.defCap;
   g('setDefDur').value=cfg.defDur;
+  var bd=g('setBookingDays');if(bd)bd.value=cfg.bookingDays||14;
+  var st=g('setSessionTimeout');if(st)st.value=cfg.sessionTimeout||0;
+  var wp=g('setWarningPercent');if(wp)wp.value=cfg.warningPercent||80;
+  var rps=g('setReportPageSize');if(rps)rps.value=cfg.reportPageSize||15;
+  var rpr=g('setReportPrintSize');if(rpr)rpr.value=cfg.reportPrintSize||40;
   var mw=g('setMaxWl');if(mw)mw.value=cfg.maxWl;
   var bd=g('setBookingDays');if(bd)bd.value=cfg.bookingDays||14;
   var st=g('setSessionTimeout');if(st)st.value=cfg.sessionTimeout||0;
@@ -1365,194 +1405,118 @@ function renderConst(){
   updDebugZones();
 }
 var _activeRpt=0;
+var _rptPage=0;
 function renderReports(){
-  // הגדר ברירת מחדל לתאריכים
-  var todayStr=ds(T);
-  var rptFrom=g('rptFrom');var rptTo=g('rptTo');
+  var todayStr=ds(T);var rptFrom=g('rptFrom');var rptTo=g('rptTo');
   if(rptFrom&&!rptFrom.value)rptFrom.value=todayStr;
   if(rptTo&&!rptTo.value)rptTo.value=todayStr;
   setActiveRpt(_activeRpt,true);
 }
 function setActiveRpt(n,refresh){
-  _activeRpt=n;
-  [0,1,2,3,4].forEach(function(i){
-    var b=g('rptBtn'+i);if(b)b.className='bsm'+(i===n?'':' gh');
-  });
+  _activeRpt=n;_rptPage=0;
+  [0,1,2,3,4].forEach(function(i){var b=g('rptBtn'+i);if(b)b.className='bsm'+(i===n?'':' gh');});
   var dr=g('rptDateRange');if(dr)dr.style.display=(n===1||n===2)?'flex':'none';
   if(refresh!==false)drawReport(n);
 }
-function drawReport(n){
-  var el=g('reportContent');if(!el)return;
-  var rptNames=['משתמשים','סיכום הזמנות','מזמינים','לו"ז שבועי','קבועים'];
+function rptHeader(n){
+  var names=['משתמשים','סיכום הזמנות','מזמינים','לו"ז שבועי','קבועים'];
   var now=new Date();
-  var dateStr=now.toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
-  var timeStr=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  var hdr='<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--pur3)">'
-    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-    +'<span style="font-size:13px;font-weight:500;color:var(--pur)">מערכת תיאום ביקורים · '+cfg.patient+'</span>'
-    +'<span style="font-size:11px;color:var(--txt3)">'+APP_VERSION+'</span>'
-    +'</div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:3px">'
-    +'<span style="font-size:12px;color:var(--txt2)">דו"ח: '+rptNames[n]+'</span>'
-    +'<span style="font-size:11px;color:var(--txt3)">'+dateStr+' · '+timeStr+'</span>'
-    +'</div>'
-    +'</div>';
-  var body='';
-  if(n===0)body=buildRptUsers();
-  else if(n===1)body=buildRptBookings();
-  else if(n===2)body=buildRptBookers();
-  else if(n===3)body=buildRptSchedule();
-  else if(n===4)body=buildRptConst();
-  el.innerHTML=hdr+body;
+  var ds2=now.toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
+  var ts=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  return '<div class="rpt-hdr" style="margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--pur3)">'
+    +'<div style="display:flex;justify-content:space-between">'
+    +'<span style="font-size:13px;font-weight:500;color:var(--pur)">'+cfg.patient+'</span>'
+    +'<span style="font-size:11px;color:var(--txt3)">'+APP_VERSION+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:3px">'
+    +'<span style="font-size:12px;color:var(--txt2)">דו"ח: '+names[n]+'</span>'
+    +'<span style="font-size:11px;color:var(--txt3)">'+ds2+' · '+ts+'</span></div></div>';
 }
-
-// ===== דו"ח משתמשים =====
-function buildRptUsers(){
-  var list=users.filter(function(u){return!(u.isSA&&!u.blocked)});
-  if(!list.length)return'<p style="font-size:12px;color:#888899;font-style:italic;padding:.8rem 0;text-align:center">אין משתמשים</p>';
-  var cols='1fr 1fr 1.4fr 0.6fr 0.7fr 0.4fr 0.5fr 0.5fr 0.5fr';
-  var hdr=rptRow(cols,['שם','טלפון','אימייל','הרשאה','סטטוס','חסום','ביקורים<br>מאושרים','מבקרים<br>מאושרים','ממתינים'],true);
-  var rows=list.map(function(u){
-    var role=u.isSA?'Super':u.isAdmin?'מנהל':'משתמש';
-    var st=u.status==='active_admin'?'פעיל כמנהל':u.status==='active'?'פעיל':'לא פעיל';
-    var stColor=u.status==='active'||u.status==='active_admin'?'#0F6E56':'#888899';
-    var blockedTxt=u.blocked?'✓':'';
-    var uBk=bookings.filter(function(b){return b.user.email===u.email&&b.status==='ok';});
-    var uWl=wlist.filter(function(w){return w.user.email===u.email;});
-    var bkVisitors=uBk.reduce(function(s,b){return s+b.cnt;},0);
-    var wlVisitors=uWl.reduce(function(s,w){return s+w.cnt;},0);
-    return rptRow(cols,[
-      '<span style="color:var(--txt)">'+u.name+'</span>',
-      '<span style="direction:ltr;display:block">'+(u.phone||'—')+'</span>',
-      '<span style="direction:ltr;display:block;word-break:break-all;font-size:10px">'+u.email+'</span>',
-      '<span style="color:var(--pur)">'+role+'</span>',
-      '<span style="color:'+stColor+'">'+st+'</span>',
-      '<span style="color:#A32D2D;text-align:center;display:block">'+blockedTxt+'</span>',
-      '<span style="text-align:center;display:block">'+(uBk.length||'—')+'</span>',
-      '<span style="text-align:center;display:block">'+(bkVisitors||'—')+'</span>',
-      '<span style="text-align:center;display:block;color:#854F0B">'+(wlVisitors>0?wlVisitors:'—')+'</span>'
-    ]);
+function buildTable(headers,rows,page,pageSize){
+  var start=page*pageSize,end=Math.min(start+pageSize,rows.length),pr=rows.slice(start,end);
+  var s='<table class="rpt-tbl" style="width:100%;border-collapse:collapse;font-size:11px;direction:rtl"><thead><tr>';
+  headers.forEach(function(h){
+    var st='border:1px solid var(--brd);padding:4px 6px;background:var(--bg2);font-weight:500;color:var(--txt2);white-space:nowrap';
+    if(h.v)st+=';writing-mode:vertical-rl;height:55px;vertical-align:bottom';
+    if(h.w)st+=';width:'+h.w;
+    s+='<th style="'+st+'">'+h.l+'</th>';
   });
-  return rptTable(hdr+rows.join(''));
+  s+='</tr></thead><tbody>';
+  pr.forEach(function(row,ri){
+    s+='<tr style="background:'+( ri%2===0?'var(--bg)':'var(--bg2)')+'">';
+    row.forEach(function(cell){s+='<td style="border:1px solid var(--brd);padding:3px 6px;vertical-align:top">'+cell+'</td>';});
+    s+='</tr>';
+  });
+  return{html:s+'</tbody></table>',total:rows.length,start:start,end:end};
 }
-
-// ===== דו"ח סיכום הזמנות =====
-function buildRptBookings(){
-  var from=g('rptFrom').value,to=g('rptTo').value;
-  if(!from||!to)return'<p style="font-size:12px;color:#888899;padding:.8rem 0">בחר טווח תאריכים</p>';
-  var cols='1fr 1fr 0.8fr 0.8fr 0.8fr';
-  var hdr=rptRow(cols,['תאריך','חלון','קיבולת','מוזמנים','ממתינים'],true);
-  var rows=[];
-  var d=new Date(pd(from));var dEnd=pd(to);
-  while(d<=dEnd){
-    var dstr=ds(d);
-    var dayWins=getDayWins(dstr);
-    dayWins.forEach(function(w){
-      var sd=slotsDB[sk(dstr,w.id)];
-      var bk=sd?tc(sd):0;
-      var wl=sd?sd.wl.length:0;
-      var cap=sd?sd.cap:w.cap;
-      if(bk>0||wl>0){
-        rows.push(rptRow(cols,[
-          fd(dstr),
-          w.start+'–'+we(w),
-          String(cap),
-          '<span style="color:'+(bk>0?'#0F6E56':'#888899')+'">'+bk+'</span>',
-          wl>0?'<span style="color:#854F0B">'+wl+'</span>':'—'
-        ]));
-      }
-    });
-    d.setDate(d.getDate()+1);
-  }
-  if(!rows.length)return rptTable(hdr)+'<p style="font-size:12px;color:#888899;padding:.6rem 0;text-align:center">אין הזמנות בטווח זה</p>';
-  return rptTable(hdr+rows.join(''));
+function rptPager(total,page,pageSize,n){
+  if(total<=pageSize)return'';
+  var pages=Math.ceil(total/pageSize);
+  return '<div class="no-print" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;font-size:11px;color:var(--txt2)">'
+    +'<button class="bsm gh" '+( page===0?'disabled':'')+' onclick="rptGo('+n+','+( page-1)+')">→ הקודם</button>'
+    +'<span>עמוד '+( page+1)+' / '+pages+'</span>'
+    +'<button class="bsm gh" '+( page>=pages-1?'disabled':'')+' onclick="rptGo('+n+','+(page+1)+')">הבא ←</button></div>';
 }
-
-// ===== דו"ח מזמינים =====
-function buildRptBookers(){
-  var from=g('rptFrom').value,to=g('rptTo').value;
-  if(!from||!to)return'<p style="font-size:12px;color:#888899;padding:.8rem 0">בחר טווח תאריכים</p>';
-  var cols='1fr 1fr 1fr 0.8fr 0.8fr';
-  var hdr=rptRow(cols,['תאריך','חלון','שם מזמין','מוזמנים','המתנה'],true);
-  var rows=[];
-  var d=new Date(pd(from));var dEnd=pd(to);
-  while(d<=dEnd){
-    var dstr=ds(d);
-    var dayWins=getDayWins(dstr);
-    dayWins.forEach(function(w){
-      var sd=slotsDB[sk(dstr,w.id)];if(!sd)return;
-      sd.bk.forEach(function(b){
-        var wlEntry=sd.wl.find(function(x){return x.user.email===b.user.email;});
-        rows.push(rptRow(cols,[
-          fd(dstr),
-          w.start+'–'+we(w),
-          b.user.name,
-          '<span style="color:#0F6E56">'+b.cnt+'</span>',
-          wlEntry?'<span style="color:#854F0B">'+wlEntry.cnt+'</span>':'—'
-        ]));
-      });
-    });
-    d.setDate(d.getDate()+1);
-  }
-  if(!rows.length)return rptTable(hdr)+'<p style="font-size:12px;color:#888899;padding:.6rem 0;text-align:center">אין הזמנות בטווח זה</p>';
-  return rptTable(hdr+rows.join(''));
+function rptGo(n,p){_rptPage=p;drawReport(n);}
+function buildRptUsersHdr(){return[{l:'שם',w:'28%'},{l:'אימייל',w:'28%'},{l:'טלפון',w:'15%'},{l:'תפקיד',v:1,w:'30px'},{l:'פעיל',v:1,w:'30px'},{l:'חסום',v:1,w:'30px'},{l:'ביקורים',v:1,w:'30px'},{l:'ממתינים',v:1,w:'30px'}];}
+function buildRptUsersRows(){
+  var list=users.filter(function(u){return!(u.isSA&&!u.blocked)});
+  return list.map(function(u){
+    var bkC=bookings.filter(function(b){return b.user.email===u.email}).length;
+    var wlC=wlist.filter(function(w){return w.user.email===u.email}).length;
+    return[u.name,u.email,u.phone||'',u.isAdmin?'M':'U',(u.status==='active'||u.status==='active_admin')?'✓':'',u.blocked?'🚫':'',bkC||'',wlC||''];
+  });
 }
-
-// ===== דו"ח לו"ז שבועי =====
-function buildRptSchedule(){
-  var DN2=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
-  var cols='1fr 0.8fr 0.8fr 0.8fr 0.8fr';
-  var hdr=rptRow(cols,['יום','שעת התחלה','משך (דק\')','מבקרים מותר','ממתינים מותר'],true);
-  var rows=[];
+function buildRptBookingsHdr(){return[{l:'תאריך'},{l:'שעה'},{l:'שם'},{l:'מבקרים'}];}
+function buildRptBookingsRows(){
+  var from=g('rptFrom')?g('rptFrom').value:'',to=g('rptTo')?g('rptTo').value:'';
+  return bookings.filter(function(b){return(!from||b.ds>=from)&&(!to||b.ds<=to);})
+    .sort(function(a,b2){return a.ds<b2.ds?-1:1;})
+    .map(function(b){var w=getDayWins(b.ds).find(function(w){return w.id===b.twId;})||{start:'?'};return[fmtDate(b.ds),w.start,b.user.name,String(b.cnt)];});
+}
+function buildRptBookersHdr(){return[{l:'שם'},{l:'אימייל'},{l:'טלפון'},{l:'ביקורים'},{l:'תאריך אחרון'}];}
+function buildRptBookersRows(){
+  var from=g('rptFrom')?g('rptFrom').value:'',to=g('rptTo')?g('rptTo').value:'',map={};
+  bookings.filter(function(b){return(!from||b.ds>=from)&&(!to||b.ds<=to);}).forEach(function(b){
+    var k=b.user.email;if(!map[k])map[k]={name:b.user.name,email:k,phone:b.user.phone||'',cnt:0,last:''};
+    map[k].cnt++;if(b.ds>map[k].last)map[k].last=b.ds;
+  });
+  return Object.values(map).sort(function(a,b){return b.cnt-a.cnt;}).map(function(r){return[r.name,r.email,r.phone,String(r.cnt),fmtDate(r.last)];});
+}
+function buildRptScheduleHdr(){return[{l:'יום'},{l:'שעה'},{l:'משך'},{l:'מבקרים'},{l:'ממתינים'}];}
+function buildRptScheduleRows(){
+  var DN2=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'],rows=[];
   [0,1,2,3,4,5,6].forEach(function(dow){
     var wins=weekDayWins[dow]||[];
-    wins.forEach(function(w,i){
-      rows.push(rptRow(cols,[
-        i===0?DN2[dow]:'',
-        w.start,
-        String(w.dur||cfg.defDur),
-        String(w.cap),
-        String(w.maxWl!=null?w.maxWl:cfg.maxWl)
-      ]));
-    });
-    if(!wins.length)rows.push(rptRow(cols,[DN2[dow],'—','—','—','—']));
+    wins.forEach(function(w,i){rows.push([i===0?DN2[dow]:'',w.start,String(w.dur||cfg.defDur),String(w.cap),String(w.maxWl!=null?w.maxWl:cfg.maxWl)]);});
+    if(!wins.length)rows.push([DN2[dow],'—','—','—','—']);
   });
-  return rptTable(hdr+rows.join(''));
+  return rows;
+}
+function buildRptConstHdr(){return[{l:'פרמטר'},{l:'ערך'}];}
+function buildRptConstRows(){return[
+  ['שם החולה',cfg.patient],['אימייל קשר',cfg.contact||' —'],
+  ['מקסימום מבקרים',String(cfg.defCap)],['משך חלון (דקות)',String(cfg.defDur)],
+  ['מקסימום ממתינים',String(cfg.maxWl)],['ימי הזמנה',String(cfg.bookingDays||14)],
+  ['זמן קצוב (דקות)',String(cfg.sessionTimeout||0)],['אחוז התראה',String(cfg.warningPercent||80)+'%'],
+  ['שורות בדוחות',String(cfg.reportPageSize||15)],['שורות להדפסה',String(cfg.reportPrintSize||40)],
+  ['אימייל SA',sa.email],['מצב מערכת',_sysMode==='maintenance'?'תחזוקה':'פעילה']
+];}
+function drawReport(n){
+  var el=g('reportContent');if(!el)return;
+  var pageSize=cfg.reportPageSize||15;
+  var hdrs,rows;
+  if(n===0){hdrs=buildRptUsersHdr();rows=buildRptUsersRows();}
+  else if(n===1){hdrs=buildRptBookingsHdr();rows=buildRptBookingsRows();}
+  else if(n===2){hdrs=buildRptBookersHdr();rows=buildRptBookersRows();}
+  else if(n===3){hdrs=buildRptScheduleHdr();rows=buildRptScheduleRows();}
+  else{hdrs=buildRptConstHdr();rows=buildRptConstRows();}
+  var tbl=buildTable(hdrs,rows,_rptPage,pageSize);
+  var printBtn='<div class="no-print" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+    +'<button class="bsm gh" onclick="window.print()" style="font-size:11px">🖨 הדפסה</button>'
+    +'<span style="font-size:10px;color:var(--txt3)">'+tbl.total+' רשומות</span></div>';
+  el.innerHTML=rptHeader(n)+printBtn+tbl.html+rptPager(tbl.total,_rptPage,pageSize,n);
 }
 
-// ===== דו"ח קבועים =====
-function buildRptConst(){
-  var rows=[
-    ['שם החולה',cfg.patient],
-    ['אימייל ליצירת קשר',cfg.contact||'לא הוגדר'],
-    ['מקסימום מבקרים (ברירת מחדל)',String(cfg.defCap)],
-    ['משך חלון (דקות, ברירת מחדל)',String(cfg.defDur)],
-    ['מקסימום ממתינים לחלון (ברירת מחדל)',String(cfg.maxWl)],
-    ['אימייל מנהל ראשי',sa.email],
-    ['מצב מערכת',_sysMode==='maintenance'?'תחזוקה':'פעילה']
-  ];
-  var cols='1.2fr 1.5fr';
-  var hdr=rptRow(cols,['פרמטר','ערך'],true);
-  return rptTable(hdr+rows.map(function(r){return rptRow(cols,r);}).join(''));
-}
-
-// ===== עזרי טבלה =====
-function rptRow(cols,cells,isHdr){
-  var bg=isHdr?'background:var(--bg2);':'';
-  var weight=isHdr?'font-weight:500;':'';
-  var fs=isHdr?'10':'11';
-  var color=isHdr?'var(--txt3)':'var(--txt2)';
-  return'<div style="display:grid;grid-template-columns:'+cols+';padding:6px 10px;border-bottom:1px solid var(--brd);align-items:center;'+bg+'">'
-    +cells.map(function(c){
-      return isHdr
-        ?'<span style="font-size:'+fs+'px;color:'+color+';'+weight+'line-height:1.3">'+c+'</span>'
-        :'<span style="font-size:'+fs+'px;color:'+color+';">'+c+'</span>';
-    }).join('')
-    +'</div>';
-}
-function rptTable(inner){
-  return'<div style="border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+inner+'</div>';
-}
 function renderOverview(){
   // משתמשים (ללא SA)
   var regUsers=users.filter(function(u){return!u.isSA});
@@ -2101,7 +2065,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.25';
+var APP_VERSION='v25.27';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2288,6 +2252,13 @@ g('btnSaveConst').addEventListener('click',function(){
   cfg.maxWl=parseInt(g('setMaxWl').value);if(isNaN(cfg.maxWl)||cfg.maxWl<0)cfg.maxWl=4;
   cfg.bookingDays=Math.min(31,Math.max(7,parseInt(g('setBookingDays').value)||14));
   cfg.sessionTimeout=parseInt(g('setSessionTimeout').value)||0;
+  cfg.warningPercent=Math.min(95,Math.max(50,parseInt(g('setWarningPercent').value)||80));
+  cfg.reportPageSize=Math.min(50,Math.max(5,parseInt(g('setReportPageSize').value)||15));
+  cfg.reportPrintSize=Math.min(100,Math.max(10,parseInt(g('setReportPrintSize').value)||40));
+  cfg.debugMode=g('setDebugMode')?g('setDebugMode').checked:false;
+  updDebugZones();
+  cfg.bookingDays=Math.min(31,Math.max(7,parseInt(g('setBookingDays').value)||14));
+  cfg.sessionTimeout=parseInt(g('setSessionTimeout').value)||0;
   cfg.warningPercent=parseInt(g('setWarningPercent').value)||80;
   cfg.debugMode=g('setDebugMode')?g('setDebugMode').checked:false;
   updDebugZones();
@@ -2418,24 +2389,18 @@ function startActivityTimer(){
   if(_activityTimer){clearTimeout(_activityTimer);_activityTimer=null;}
   if(_warningTimer){clearTimeout(_warningTimer);_warningTimer=null;}
   if(_countdownInterval){clearInterval(_countdownInterval);_countdownInterval=null;}
-  var mins=cfg.sessionTimeout||0;
-  if(!mins||!cu)return;
-  var totalMs=mins*60*1000;
-  var warnPct=(cfg.warningPercent||80)/100;
-  var warnMs=totalMs*warnPct;
-  var remainMs=totalMs-warnMs;
-  // הגדר התראה
+  var mins=cfg.sessionTimeout||0;if(!mins||!cu)return;
+  var totalMs=mins*60*1000,warnPct=(cfg.warningPercent||80)/100,warnMs=totalMs*warnPct,remainMs=totalMs-warnMs;
   _warningTimer=setTimeout(function(){
     var secs=Math.round(remainMs/1000);
-    g('timeoutCountdown').textContent=secs;
-    g('timeoutWarningModal').classList.add('on');
+    var el=g('timeoutCountdown');if(el)el.textContent=secs;
+    var m=g('timeoutWarningModal');if(m)m.classList.add('on');
     _countdownInterval=setInterval(function(){
       secs--;
-      var el=g('timeoutCountdown');
-      if(el)el.textContent=secs;
+      var el2=g('timeoutCountdown');if(el2)el2.textContent=secs;
       if(secs<=0){
         clearInterval(_countdownInterval);
-        g('timeoutWarningModal').classList.remove('on');
+        var m2=g('timeoutWarningModal');if(m2)m2.classList.remove('on');
         addLog((cu?cu.name:'משתמש')+' הוצא אוטומטית (חוסר פעילות)','wa');
         logout();
       }
