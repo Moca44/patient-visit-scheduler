@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.17
+     Empathy Scheduler v25.18
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 08:36 (GMT+2)
+     Built: 2026-03-19 08:53 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -395,7 +395,7 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         </div>
         <div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap">
           <button class="bp" style="margin-top:0;flex:1;min-width:100px" id="btnDayCommit">✔ בצע שינויים</button>
-          <button class="bs" style="margin-top:0;min-width:100px" id="btnDayCancel">ביטול שינויים</button>
+          <button class="bs" style="margin-top:0;flex:1;min-width:100px" id="btnDayCancel">ביטול שינויים</button>
           <button class="bs" style="margin-top:0;min-width:100px" id="btnDayAddTw">+ הוסף חלון</button>
         </div>
         <!-- inline add-window form -->
@@ -438,8 +438,10 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         <p class="sl" style="color:var(--pur);margin-bottom:8px">החל שינויי חלונות על ימים</p>
         <p style="font-size:11px;color:var(--pur2);margin-bottom:8px;line-height:1.5">היום הנוכחי משמש תבנית. סמן את הימים שיקבלו את אותן ההגדרות.</p>
         <div class="wg" id="applyDayGrid" style="margin-bottom:10px"></div>
-        <button class="bp" id="btnSaveSettings" style="margin-top:0">שמור הגדרות</button>
-        <button class="bs" id="btnCancelSettings" style="margin-top:6px">ביטול שינויים</button>
+        <div style="display:flex;gap:8px;margin-top:0">
+          <button class="bp" id="btnSaveSettings" style="flex:1;margin-top:0">שמור הגדרות</button>
+          <button class="bs" id="btnCancelSettings" style="flex:1;margin-top:0">ביטול שינויים</button>
+        </div>
         <button class="bs" id="btnUpdateCal" style="margin-top:6px;display:none">עדכן יומן לפי הגדרות חדשות</button>
       </div>
       <div id="setOk" class="fl2 ok" style="margin-top:8px"></div>
@@ -2015,7 +2017,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.17';
+var APP_VERSION='v25.18';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2392,10 +2394,15 @@ function openAbout(){
   var av=g('aboutVersion');if(av)av.textContent=APP_VERSION;
   g('aboutModal').classList.add('on');
 }
-document.querySelectorAll('.btnAbout').forEach(function(b){
-  b.addEventListener('click',openAbout);
-});
-g('btnAboutOk').addEventListener('click',function(){g('aboutModal').classList.remove('on');});
+function closeAbout(){g('aboutModal').classList.remove('on');}
+g('btnAboutOk').addEventListener('click',closeAbout);
+g('aboutModal').addEventListener('click',function(e){if(e.target===this)closeAbout();});
+// wire all About buttons — runs after DOM ready
+setTimeout(function(){
+  document.querySelectorAll('.btnAbout').forEach(function(b){
+    b.addEventListener('click',openAbout);
+  });
+},0);
 g('btnTimeoutStay').addEventListener('click',function(){
   g('timeoutWarningModal').classList.remove('on');
   if(_countdownInterval){clearInterval(_countdownInterval);_countdownInterval=null;}
