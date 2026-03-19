@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.23
+     Empathy Scheduler v25.24
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 14:23 (GMT+2)
+     Built: 2026-03-19 14:38 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -1902,9 +1902,21 @@ function statusBadge(u){
 }
 function renderAdminUsers(){
   var el=g('aUsers');
-  g('aUsersListView').style.display='block';g('aUserEditPanel').style.display='none';
-  var np=g('aUserNewPanel');if(np)np.style.display='none';
-  var sp2=g('aSAEditPanel');if(sp2)sp2.style.display='none';
+  // Don't reset panels if user is actively editing
+  var np=g('aUserNewPanel');
+  var ep=g('aUserEditPanel');
+  var sp2=g('aSAEditPanel');
+  var npOpen=np&&np.style.display==='block';
+  var epOpen=ep&&ep.style.display==='block';
+  var spOpen=sp2&&sp2.style.display==='block';
+  if(npOpen||epOpen||spOpen){
+    // Just refresh the user list in background, don't touch panels
+    return;
+  }
+  g('aUsersListView').style.display='block';
+  if(ep)ep.style.display='none';
+  if(np)np.style.display='none';
+  if(sp2)sp2.style.display='none';
   // הצג איפוס משתמשים רק ברשימה + מצב תחזוקה
   var rz=g('resetUsersZone');if(rz)rz.style.display=(cfg.debugMode&&_sysMode==='maintenance')?'block':'none';
   // משתמשים רגילים + SA חסומים (היסטוריה)
@@ -2019,7 +2031,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.23';
+var APP_VERSION='v25.24';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2109,7 +2121,7 @@ function toggleBlock(email){
   renderAdminUsers();
 }
 function openNewUser(){
-  console.log('[DEBUG] openNewUser called');
+
   g('nuName').value='';g('nuPhone').value='';g('nuEmail').value='';g('nuPw').value='';g('nuPwConf').value='';g('nuIsAdmin').checked=false;
   document.querySelectorAll('#aUserNewPanel .fe').forEach(function(e){e.classList.remove('on')});
   document.querySelectorAll('#aUserNewPanel .fi').forEach(function(f){f.classList.remove('er')});
@@ -2120,17 +2132,7 @@ function openNewUser(){
   g('aUserEditPanel').style.display='none';
   g('aUserNewPanel').style.display='block';
   var _rz=g('resetUsersZone');if(_rz)_rz.style.display='none';
-  // observe for unexpected close
-  var obs=new MutationObserver(function(mutations){
-    mutations.forEach(function(m){
-      if(m.attributeName==='style'&&g('aUserNewPanel').style.display==='none'){
-        var stack=new Error().stack.split('\n')[2]||'unknown';
-        addLog('[DEBUG] panel closed by: '+stack,'wa');
-      }
-    });
-  });
-  obs.observe(g('aUserNewPanel'),{attributes:true,attributeFilter:['style']});
-  setTimeout(function(){obs.disconnect();},60000);
+
 }
 function saveNewUser(){
   var n=g('nuName').value.trim(),p=g('nuPhone').value.trim(),e=g('nuEmail').value.trim(),pw=g('nuPw').value,conf=g('nuPwConf').value;
