@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.15
+     Empathy Scheduler v25.17
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-18 20:36 (GMT+2)
+     Built: 2026-03-19 08:36 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -390,9 +390,12 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
           <span id="adminDayDate" style="font-size:12px;color:var(--pur);font-weight:500"></span>
         </div>
         <div id="adminDaySlots"></div>
+        <div id="dayEditIndicator" style="display:none;background:#FFF8E6;border:1px solid #EF9F27;border-radius:6px;padding:6px 10px;margin-top:8px;font-size:11px;color:#854F0B">
+          ✏️ יש שינויים לא שמורים — לחץ "בצע שינויים" לשמירה
+        </div>
         <div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap">
           <button class="bp" style="margin-top:0;flex:1;min-width:100px" id="btnDayCommit">✔ בצע שינויים</button>
-          <button class="bs" style="margin-top:0;min-width:70px" id="btnDayCancel">ביטול</button>
+          <button class="bs" style="margin-top:0;min-width:100px" id="btnDayCancel">ביטול שינויים</button>
           <button class="bs" style="margin-top:0;min-width:100px" id="btnDayAddTw">+ הוסף חלון</button>
         </div>
         <!-- inline add-window form -->
@@ -428,11 +431,15 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       <button class="bsm" id="btnAddTw" style="margin-top:5px">+ הוסף חלון</button>
       <div class="sep"></div>
       <!-- אזור 3: החל שינויים על ימים -->
+      <div id="settingsEditIndicator" style="display:none;background:var(--amber2,#FFF8E6);border:1px solid var(--amber,#EF9F27);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:var(--amber,#854F0B)">
+        ✏️ יש שינויים לא שמורים
+      </div>
       <div style="background:var(--pur3);border:1px solid var(--pur4);border-radius:10px;padding:10px 12px;margin-bottom:10px">
         <p class="sl" style="color:var(--pur);margin-bottom:8px">החל שינויי חלונות על ימים</p>
         <p style="font-size:11px;color:var(--pur2);margin-bottom:8px;line-height:1.5">היום הנוכחי משמש תבנית. סמן את הימים שיקבלו את אותן ההגדרות.</p>
         <div class="wg" id="applyDayGrid" style="margin-bottom:10px"></div>
         <button class="bp" id="btnSaveSettings" style="margin-top:0">שמור הגדרות</button>
+        <button class="bs" id="btnCancelSettings" style="margin-top:6px">ביטול שינויים</button>
         <button class="bs" id="btnUpdateCal" style="margin-top:6px;display:none">עדכן יומן לפי הגדרות חדשות</button>
       </div>
       <div id="setOk" class="fl2 ok" style="margin-top:8px"></div>
@@ -547,7 +554,8 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       <div class="fg"><label class="lbl">מקסימום מבקרים (ברירת מחדל)</label><input id="setDefCap" type="number" min="1" max="20" value="4" class="fi"/></div>
       <div class="fg"><label class="lbl">משך חלון בדקות (ברירת מחדל)</label><input id="setDefDur" type="number" min="15" max="240" value="90" class="fi"/></div>
       <div class="fg"><label class="lbl">מקסימום ממתינים לחלון (ברירת מחדל)</label><input id="setMaxWl" type="number" min="0" max="20" value="4" class="fi"/></div>
-      <div class="fg"><label class="lbl">זמן קצוב ללא פעילות (דקות, 0=ללא הגבלה)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="30" class="fi"/></div>
+      <div class="fg"><label class="lbl">זמן קצוב ללא פעילות (דקות, 0=ללא הגבלה)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="15" class="fi"/></div>
+      <div class="fg"><label class="lbl">אחוז זמן המתנה להתראה (0-100)</label><input id="setWarningPercent" type="number" min="0" max="100" value="80" class="fi"/></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--red2);border:1px solid var(--red3);border-radius:8px">
         <input type="checkbox" id="setDebugMode" style="width:16px;height:16px;cursor:pointer"/>
         <label for="setDebugMode" style="font-size:12px;color:var(--red);cursor:pointer">מצב DEBUG — פונקציות ייחודיות לבדיקת מערכת מופעלות</label>
@@ -599,7 +607,14 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
   </div>
 </div>
 
-<div id="aboutModal" class="ov">
+<div id="timeoutWarningModal" class="ov">
+  <div class="mb" style="text-align:center">
+    <p style="font-size:32px;margin-bottom:.5rem">⏰</p>
+    <p style="font-family:'Playfair Display',serif;font-size:16px;color:var(--txt);margin-bottom:.5rem">התראת ניתוק</p>
+    <p style="font-size:12px;color:var(--txt2);margin-bottom:1rem">עקב חוסר פעילות, תוצא מהמערכת בעוד <span id="timeoutCountdown" style="font-weight:500;color:var(--red)">60</span> שניות.</p>
+    <button class="bp" style="margin-top:0" id="btnTimeoutStay">אני כאן — המשך</button>
+  </div>
+</div>
   <div class="mb" style="text-align:right">
     <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--pur);margin-bottom:.8rem">Empathy Scheduler</p>
     <div style="font-size:12px;color:var(--txt2);line-height:2">
@@ -638,7 +653,7 @@ var sa=_saEntry;
 var _sysMode='maintenance';
 var _maintenanceAdmin=null;
 var _dayLocks={};
-var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,debugMode:false,patient:'ישראל ישראלי',contact:''};
+var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,warningPercent:80,debugMode:false,patient:'ישראל ישראלי',contact:''};
 var weekDayWins={
   0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}],
   1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}],
@@ -678,8 +693,9 @@ async function dbDeleteNeq(table,col,val){
   if(!r.ok)throw new Error('DELETE '+table+' failed: '+r.status);
 }
 async function dbUpdate(table,data,col,val){
-  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=eq.'+encodeURIComponent(val);
-  var r=await fetch(url,{method:'PATCH',headers:SUPA_HEADERS,body:JSON.stringify(data)});
+  var url=SUPA_URL+'/rest/v1/'+table+'?'+col+'=eq.'+val;
+  var headers=Object.assign({},SUPA_HEADERS,{'X-Supabase-Allow-Null':'true'});
+  var r=await fetch(url,{method:'PATCH',headers:headers,body:JSON.stringify(data)});
   if(!r.ok)throw new Error('UPDATE '+table+' failed: '+r.status);
 }
 
@@ -693,11 +709,17 @@ var DB={
       cfg.defCap=r.def_cap||4;
       cfg.defDur=r.def_dur||90;
       cfg.maxWl=r.max_wl||4;
+      cfg.sessionTimeout=r.session_timeout!=null?r.session_timeout:15;
+      cfg.warningPercent=r.warning_percent!=null?r.warning_percent:80;
+      cfg.debugMode=r.debug_mode||false;
       _sysMode=r.sys_mode||'maintenance';
     }
   },
   async saveCfg(){
-    await dbUpsert('cfg',{id:1,patient:cfg.patient,contact:cfg.contact,def_cap:cfg.defCap,def_dur:cfg.defDur,max_wl:cfg.maxWl,sys_mode:_sysMode});
+    await dbUpsert('cfg',{id:1,patient:cfg.patient,contact:cfg.contact,
+      def_cap:cfg.defCap,def_dur:cfg.defDur,max_wl:cfg.maxWl,
+      sys_mode:_sysMode,session_timeout:cfg.sessionTimeout,
+      warning_percent:cfg.warningPercent,debug_mode:cfg.debugMode});
   },
   async loadWeekDayWins(){
     var data=await dbGet('week_day_wins','order=dow,sort_order');
@@ -829,8 +851,15 @@ var _locked=false;
 var _pollInterval=null;
 var _activityTimer=null;
 var _lastActivity=Date.now();
-function lockScreen(){if(_locked)return;_locked=true;updDot()}
-function unlockScreen(){_locked=false;updDot()}
+function lockScreen(){
+  if(_locked)return;_locked=true;updDot();
+  var di=g('dayEditIndicator');if(di)di.style.display='block';
+}
+function unlockScreen(){
+  _locked=false;updDot();
+  var di=g('dayEditIndicator');if(di)di.style.display='none';
+  var si=g('settingsEditIndicator');if(si)si.style.display='none';
+}
 function updDot(){var d=g('adminLockDot');if(!d)return;d.className=_locked?'lock-dot red':'lock-dot grn';d.title=_locked?'נעול — יש שינויים לא שמורים':'פתוח לעדכונים'}
 
 function g(id){return document.getElementById(id)}
@@ -1289,7 +1318,7 @@ function switchTab(n){
   });
   if(n===0)renderOverview();
   if(n===1)renderAdminCal();
-  if(n===2)renderSettings();
+  if(n===2){_savedWeekDayWins=JSON.parse(JSON.stringify(weekDayWins));renderSettings();}
   if(n===3)renderAdminUsers();
   if(n===4)renderConst();
   if(n===5)renderReports();
@@ -1301,6 +1330,7 @@ function renderConst(){
   g('setDefDur').value=cfg.defDur;
   var mw=g('setMaxWl');if(mw)mw.value=cfg.maxWl;
   var st=g('setSessionTimeout');if(st)st.value=cfg.sessionTimeout||0;
+  var wp=g('setWarningPercent');if(wp)wp.value=cfg.warningPercent||80;
   var dm=g('setDebugMode');if(dm)dm.checked=cfg.debugMode||false;
   updDebugZones();
 }
@@ -1714,6 +1744,8 @@ var DN=["א'","ב'","ג'","ד'","ה'","ו'","ש'"];
 function sortWins(){cfg.wins.sort(function(a,b){return a.start.localeCompare(b.start)})}
 var _activeDow=0;
 var _applyDays=cfg.days.slice();
+var _savedWeekDayWins=null; // snapshot for cancel
+function showSettingsIndicator(){var si=g('settingsEditIndicator');if(si)si.style.display='block';}
 function renderSettings(){
   var grid=g('wdayGrid');grid.innerHTML='';
   [0,1,2,3,4,5,6].forEach(function(dow){
@@ -1983,7 +2015,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.15';
+var APP_VERSION='v25.17';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2148,6 +2180,16 @@ g('btnAddTw').addEventListener('click',function(){
   renderTwins();renderSettings();
 });
 g('btnSaveSettings').addEventListener('click',doSaveSettings);
+g('btnCancelSettings').addEventListener('click',function(){
+  // החזר snapshot
+  if(_savedWeekDayWins){
+    weekDayWins=JSON.parse(JSON.stringify(_savedWeekDayWins));
+    _savedWeekDayWins=null;
+  }
+  var si=g('settingsEditIndicator');if(si)si.style.display='none';
+  renderSettings();
+  addLog('שינויי תבנית בוטלו','info');
+});
 g('btnUpdateCal').addEventListener('click',doUpdateCal);
 g('btnSaveConst').addEventListener('click',function(){
   cfg.patient=g('setPatient').value.trim()||'ישראל ישראלי';
@@ -2156,6 +2198,7 @@ g('btnSaveConst').addEventListener('click',function(){
   cfg.defDur=parseInt(g('setDefDur').value)||90;
   cfg.maxWl=parseInt(g('setMaxWl').value);if(isNaN(cfg.maxWl)||cfg.maxWl<0)cfg.maxWl=4;
   cfg.sessionTimeout=parseInt(g('setSessionTimeout').value)||0;
+  cfg.warningPercent=parseInt(g('setWarningPercent').value)||80;
   cfg.debugMode=g('setDebugMode')?g('setDebugMode').checked:false;
   updDebugZones();
   sa.contact=cfg.contact;
@@ -2279,17 +2322,44 @@ function startPolling(){
 }
 
 // ===== ACTIVITY TIMEOUT =====
+var _warningTimer=null;
+var _countdownInterval=null;
 function startActivityTimer(){
   if(_activityTimer){clearTimeout(_activityTimer);_activityTimer=null;}
+  if(_warningTimer){clearTimeout(_warningTimer);_warningTimer=null;}
+  if(_countdownInterval){clearInterval(_countdownInterval);_countdownInterval=null;}
   var mins=cfg.sessionTimeout||0;
   if(!mins||!cu)return;
-  _activityTimer=setTimeout(function(){
-    addLog((cu?cu.name:'משתמש')+' הוצא אוטומטית (חוסר פעילות)','wa');
-    logout();
-  },mins*60*1000);
+  var totalMs=mins*60*1000;
+  var warnPct=(cfg.warningPercent||80)/100;
+  var warnMs=totalMs*warnPct;
+  var remainMs=totalMs-warnMs;
+  // הגדר התראה
+  _warningTimer=setTimeout(function(){
+    var secs=Math.round(remainMs/1000);
+    g('timeoutCountdown').textContent=secs;
+    g('timeoutWarningModal').classList.add('on');
+    _countdownInterval=setInterval(function(){
+      secs--;
+      var el=g('timeoutCountdown');
+      if(el)el.textContent=secs;
+      if(secs<=0){
+        clearInterval(_countdownInterval);
+        g('timeoutWarningModal').classList.remove('on');
+        addLog((cu?cu.name:'משתמש')+' הוצא אוטומטית (חוסר פעילות)','wa');
+        logout();
+      }
+    },1000);
+  },warnMs);
 }
 function resetActivity(){
   _lastActivity=Date.now();
+  // סגור warning אם פתוח
+  var modal=g('timeoutWarningModal');
+  if(modal&&modal.classList.contains('on')){
+    modal.classList.remove('on');
+    if(_countdownInterval){clearInterval(_countdownInterval);_countdownInterval=null;}
+  }
   if(cu&&cfg.sessionTimeout>0)startActivityTimer();
 }
 ['click','keydown','touchstart'].forEach(function(ev){
@@ -2326,6 +2396,11 @@ document.querySelectorAll('.btnAbout').forEach(function(b){
   b.addEventListener('click',openAbout);
 });
 g('btnAboutOk').addEventListener('click',function(){g('aboutModal').classList.remove('on');});
+g('btnTimeoutStay').addEventListener('click',function(){
+  g('timeoutWarningModal').classList.remove('on');
+  if(_countdownInterval){clearInterval(_countdownInterval);_countdownInterval=null;}
+  resetActivity();
+});
 
 // ===== INIT WITH DB — must be last =====
 (async function(){
