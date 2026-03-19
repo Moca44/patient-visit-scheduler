@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.19
+     Empathy Scheduler v25.20
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 10:21 (GMT+2)
+     Built: 2026-03-19 10:32 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -2037,7 +2037,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.19';
+var APP_VERSION='v25.20';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2433,7 +2433,7 @@ g('btnTimeoutStay').addEventListener('click',function(){
 (async function(){
   try{
     var lm=document.getElementById('loadingMsg');
-    if(lm)lm.textContent='טוען נתונים...';
+    if(lm)lm.textContent='טוען נתונים... ('+APP_VERSION+')';
     await DB.loadCfg();
     await DB.loadWeekDayWins();
     await DB.loadUsers();
