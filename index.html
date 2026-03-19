@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.18
+     Empathy Scheduler v25.19
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 08:53 (GMT+2)
+     Built: 2026-03-19 10:21 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -615,6 +615,26 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
     <p style="font-family:'Playfair Display',serif;font-size:16px;color:var(--txt);margin-bottom:.5rem">התראת ניתוק</p>
     <p style="font-size:12px;color:var(--txt2);margin-bottom:1rem">עקב חוסר פעילות, תוצא מהמערכת בעוד <span id="timeoutCountdown" style="font-weight:500;color:var(--red)">60</span> שניות.</p>
     <button class="bp" style="margin-top:0" id="btnTimeoutStay">אני כאן — המשך</button>
+  </div>
+</div>
+
+<div id="aboutModal" class="ov">
+  <div class="mb" style="text-align:right">
+    <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--pur);margin-bottom:.8rem">Empathy Scheduler</p>
+    <div style="font-size:12px;color:var(--txt2);line-height:2">
+      <div><b>גרסא:</b> <span id="aboutVersion"></span></div>
+      <div><b>מחבר:</b> Moshe Carmeli</div>
+      <div><b>אימייל:</b> <span style="direction:ltr;display:inline-block">moshe.carmeli@gmail.com</span></div>
+      <div><b>נכתב בסיוע:</b> Claude.ai (Anthropic)</div>
+      <div><b>רישיון:</b> CC BY-NC 4.0 — חינמי לשימוש אישי ולא מסחרי</div>
+      <div style="margin-top:8px"><b>קוד מקור:</b>
+        <a href="https://github.com/moca44/patient-visit-scheduler" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">github.com/moca44/patient-visit-scheduler</a>
+      </div>
+      <div><b>תיעוד:</b>
+        <a href="https://github.com/moca44/patient-visit-scheduler/tree/main/docs" target="_blank" style="color:var(--pur);direction:ltr;display:inline-block">docs</a>
+      </div>
+    </div>
+    <button class="bp" style="margin-top:1rem" id="btnAboutOk">סגור</button>
   </div>
 </div>
   <div class="mb" style="text-align:right">
@@ -2017,7 +2037,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.18';
+var APP_VERSION='v25.19';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
