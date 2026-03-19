@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ===================================================
-     Empathy Scheduler v25.24
+     Empathy Scheduler v25.25
      
      Author:  Moshe Carmeli <moshe.carmeli@gmail.com>
      Built with: Claude.ai (Anthropic) — claude.ai
@@ -9,7 +9,7 @@
      Repository: https://github.com/moca44/patient-visit-scheduler
      Docs:       https://github.com/moca44/patient-visit-scheduler/tree/main/docs
      
-     Built: 2026-03-19 14:38 (GMT+2)
+     Built: 2026-03-19 16:09 (GMT+2)
      Supabase-connected version
      =================================================== -->
 <html lang="he" dir="rtl">
@@ -34,6 +34,7 @@ body{background:#eeeef5;font-family:'DM Sans',sans-serif;min-height:100vh;displa
 .tbar{display:flex;justify-content:space-between;align-items:center}
 .nav{display:flex;padding:0 1rem;background:var(--pur);border-top:1px solid var(--pur2);overflow-x:auto;gap:4px}
 .ntab{background:none;border:2px solid transparent;border-radius:6px 6px 0 0;font-family:'DM Sans',sans-serif;font-size:12px;color:#fff;cursor:pointer;padding:7px 11px;white-space:nowrap;flex-shrink:0;font-weight:400;margin-top:4px;transition:background .15s,border-color .15s}
+.ntab.dirty{border-color:#EF9F27!important;color:#FFE08A}
 .ntab:hover:not(.on){background:rgba(255,255,255,.1)}
 .ntab.on{color:#fff;border-color:#fff;background:rgba(255,255,255,.18);font-weight:500}
 .body{padding:.9rem 1.3rem}
@@ -402,9 +403,13 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
         <div id="addWinForm" style="display:none;margin-top:10px;background:var(--bg2);border:1px solid var(--brd);border-radius:8px;padding:10px 12px">
           <p class="sl" style="margin-bottom:8px">הוספת חלון ליום זה</p>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <div style="flex:1;min-width:120px">
-              <label class="lbl">שעת התחלה</label>
-              <select id="newWinTime" class="fi" dir="ltr"></select>
+            <div>
+              <label class="lbl">שעה</label>
+              <select id="newWinTimeH" class="fi" dir="ltr" style="width:52px"></select>
+            </div>
+            <div>
+              <label class="lbl">דקות</label>
+              <select id="newWinTimeM" class="fi" dir="ltr" style="width:48px"></select>
             </div>
             <div style="width:80px">
               <label class="lbl">מקס׳ מבקרים</label>
@@ -491,8 +496,11 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
           <input type="checkbox" id="nuIsAdmin" style="width:18px;height:18px;cursor:pointer;accent-color:var(--pur)"/>
         </div>
         <div id="nuFlash" class="fl2 ok" style="margin-bottom:8px"></div>
-        <button class="bp" id="btnSaveNewUser">צור משתמש</button>
-        <button class="bs" id="btnNewUserCancel">ביטול</button>
+        <div style="display:flex;gap:8px">
+          <button class="bp" id="btnSaveNewUser" style="flex:1;margin-top:0">צור משתמש</button>
+          <button class="bs" id="btnNewUserCancel" style="flex:1;margin-top:0">חזרה</button>
+        </div>
+        <button class="bsm gh" id="btnAddAnotherUser" style="margin-top:8px;width:100%">+ צור משתמש חדש נוסף</button>
       </div>
       <!-- SA edit panel -->
       <div id="aSAEditPanel" style="display:none">
@@ -553,11 +561,12 @@ button.bsm.am{background:var(--amb);color:var(--amb2)}
       <div class="fg"><label class="lbl">שם החולה</label><input id="setPatient" type="text" class="fi" value="ישראל ישראלי"/></div>
       <div class="fg"><label class="lbl">אימייל ליצירת קשר</label><input id="setContact" type="email" autocorrect="off" autocapitalize="none" spellcheck="false" dir="ltr" style="text-align:left" class="fi" placeholder="admin@example.com" autocomplete="email"/></div>
       <div class="sep"></div>
-      <div class="fg"><label class="lbl">מקסימום מבקרים (ברירת מחדל)</label><input id="setDefCap" type="number" min="1" max="20" value="4" class="fi"/></div>
-      <div class="fg"><label class="lbl">משך חלון בדקות (ברירת מחדל)</label><input id="setDefDur" type="number" min="15" max="240" value="90" class="fi"/></div>
-      <div class="fg"><label class="lbl">מקסימום ממתינים לחלון (ברירת מחדל)</label><input id="setMaxWl" type="number" min="0" max="20" value="4" class="fi"/></div>
-      <div class="fg"><label class="lbl">זמן קצוב ללא פעילות (דקות, 0=ללא הגבלה)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="15" class="fi"/></div>
-      <div class="fg"><label class="lbl">אחוז זמן המתנה להתראה (0-100)</label><input id="setWarningPercent" type="number" min="0" max="100" value="80" class="fi"/></div>
+      <div class="fg"><label class="lbl">מקסימום מבקרים (1–20)</label><input id="setDefCap" type="number" min="1" max="20" value="4" class="fi"/></div>
+      <div class="fg"><label class="lbl">משך חלון בדקות (15–240)</label><input id="setDefDur" type="number" min="15" max="240" value="90" class="fi"/></div>
+      <div class="fg"><label class="lbl">מקסימום ממתינים לחלון (0–20)</label><input id="setMaxWl" type="number" min="0" max="20" value="4" class="fi"/></div>
+      <div class="fg"><label class="lbl">ימי הזמנה קדימה (7–31)</label><input id="setBookingDays" type="number" min="7" max="31" value="14" class="fi"/></div>
+      <div class="fg"><label class="lbl">זמן קצוב ללא פעילות דקות (0=ללא הגבלה, 1–120)</label><input id="setSessionTimeout" type="number" min="0" max="120" value="15" class="fi"/></div>
+      <div class="fg"><label class="lbl">אחוז זמן המתנה להתראה (50–95)</label><input id="setWarningPercent" type="number" min="50" max="95" value="80" class="fi"/></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--red2);border:1px solid var(--red3);border-radius:8px">
         <input type="checkbox" id="setDebugMode" style="width:16px;height:16px;cursor:pointer"/>
         <label for="setDebugMode" style="font-size:12px;color:var(--red);cursor:pointer">מצב DEBUG — פונקציות ייחודיות לבדיקת מערכת מופעלות</label>
@@ -657,7 +666,7 @@ var sa=_saEntry;
 var _sysMode='maintenance';
 var _maintenanceAdmin=null;
 var _dayLocks={};
-var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,warningPercent:80,debugMode:false,patient:'ישראל ישראלי',contact:''};
+var cfg={days:[0,1,2,3,4,5,6],wins:[{id:'w1',start:'11:00',cap:4,dur:90},{id:'w2',start:'17:30',cap:4,dur:90}],defCap:4,defDur:90,maxWl:4,sessionTimeout:15,warningPercent:80,debugMode:false,bookingDays:14,patient:'ישראל ישראלי',contact:''};
 var weekDayWins={
   0:[{id:'wd0a',start:'11:00',cap:4,dur:90},{id:'wd0b',start:'17:30',cap:4,dur:90}],
   1:[{id:'wd1a',start:'11:00',cap:4,dur:90},{id:'wd1b',start:'17:30',cap:4,dur:90}],
@@ -716,6 +725,7 @@ var DB={
       cfg.sessionTimeout=r.session_timeout!=null?r.session_timeout:15;
       cfg.warningPercent=r.warning_percent!=null?r.warning_percent:80;
       cfg.debugMode=r.debug_mode||false;
+      cfg.bookingDays=r.booking_days!=null?r.booking_days:14;
       _sysMode=r.sys_mode||'maintenance';
     }
   },
@@ -723,7 +733,8 @@ var DB={
     await dbUpsert('cfg',{id:1,patient:cfg.patient,contact:cfg.contact,
       def_cap:cfg.defCap,def_dur:cfg.defDur,max_wl:cfg.maxWl,
       sys_mode:_sysMode,session_timeout:cfg.sessionTimeout,
-      warning_percent:cfg.warningPercent,debug_mode:cfg.debugMode});
+      warning_percent:cfg.warningPercent,debug_mode:cfg.debugMode,
+      booking_days:cfg.bookingDays});
   },
   async loadWeekDayWins(){
     var data=await dbGet('week_day_wins','order=dow,sort_order');
@@ -855,14 +866,17 @@ var _locked=false;
 var _pollInterval=null;
 var _activityTimer=null;
 var _lastActivity=Date.now();
+function setTabDirty(n,dirty){var t=g('tab'+n);if(t)t.classList.toggle('dirty',dirty);}
 function lockScreen(){
   if(_locked)return;_locked=true;updDot();
   var di=g('dayEditIndicator');if(di)di.style.display='block';
+  setTabDirty(1,true);
 }
 function unlockScreen(){
   _locked=false;updDot();
   var di=g('dayEditIndicator');if(di)di.style.display='none';
   var si=g('settingsEditIndicator');if(si)si.style.display='none';
+  setTabDirty(1,false);setTabDirty(2,false);
 }
 function updDot(){var d=g('adminLockDot');if(!d)return;d.className=_locked?'lock-dot red':'lock-dot grn';d.title=_locked?'נעול — יש שינויים לא שמורים':'פתוח לעדכונים'}
 
@@ -903,7 +917,7 @@ function doResetCalendar(){
   bookings=[];wlist=[];slotsDB={};dayWinsDB={};
   // בנה slots ריקים לפי תבנית ל-14 ימים קרובים
   var newSlots=[];
-  for(var i=0;i<14;i++){
+  for(var i=0;i<(cfg.bookingDays||14);i++){
     var d=new Date(T);d.setDate(d.getDate()+i);
     var dstr=ds(d),dow=d.getDay();
     var wins=weekDayWins[dow]||[];
@@ -1045,7 +1059,7 @@ function pwStr(pwId,bars,hintId){
 }
 
 function doLogin(){
-  ce();var email=g('lEmail').value.trim(),pw=g('lPw').value;
+  ce();var email=g('lEmail').value.trim().toLowerCase(),pw=g('lPw').value;
   if(!email.includes('@')||!email.includes('.')){se(null,'lErr','אנא הכנס אימייל תקין');return}
   var u=users.find(function(u){return u.email===email});
   if(!u){
@@ -1053,9 +1067,13 @@ function doLogin(){
     var blockedSA=users.find(function(u){return u.email===email&&u.isSA&&u.blocked;});
     if(blockedSA){se(null,'lErr','חשבון זה חסום. פנה למנהל המערכת');return;}
     if(email===sa.email){se(null,'lErr','כתובת זו שמורה למנהל המערכת');return;}
-    g('regEmailShow').textContent=email;g('rName').value='';g('rPhone').value='';pend={email:email,_new:true};ce();sv('vReg');return;
+    // במצב תחזוקה — אפשר הרשמה אבל הודע
+    g('regEmailShow').textContent=email;g('rName').value='';g('rPhone').value='';
+    pend={email:email,_new:true,_maintenance:_sysMode==='maintenance'};ce();sv('vReg');return;
   }
   if(u.blocked){se(null,'lErr','חשבון זה חסום. פנה למנהל המערכת');return;}
+  // משתמש רגיל במצב תחזוקה
+  if(!isA(u)&&_sysMode==='maintenance'){se(null,'lErr','המערכת במצב תחזוקה. נא לנסות מאוחר יותר.');return;}
   if(!u.pwHash){pend=u;openSetPw(u.isSA?'כניסה ראשונה':'הגדרת סיסמא',u.isSA?'מנהל ראשי':u.name);return}
   if(H(pw)!==u.pwHash){se(null,'lErr','פרטים שגויים');return}
   cu=u;afterAuth();
@@ -1066,6 +1084,7 @@ function doReg(){
   if(!phone||phone.replace(/\D/g,'').length<9){se('rPhone','rPhoneErr','טלפון לא תקין');ok=false}
   if(!ok)return;
   pend=Object.assign({},pend,{name:name,phone:phone,id:Date.now(),isAdmin:false,pwHash:null,status:'inactive'});
+  pend.email=pend.email.toLowerCase();
   openSetPw('הגדרת סיסמא','ברוכים הבאים, '+name);
 }
 function openSetPw(title,sub){g('setPwTitle').textContent=title;g('setPwSub').textContent=sub;g('pwNew').value='';g('pwConf').value='';ce();sv('vSetPw')}
@@ -1074,13 +1093,21 @@ function doSavePw(){
   if(err){se('pwNew','pwNewErr',err);return}
   if(pw!==conf){se('pwConf','pwConfErr','הסיסמאות אינן תואמות');return}
   pend.pwHash=H(pw);
-  if(pend._new){delete pend._new;if(!pend.id)pend.id='u_'+Date.now();users.push(pend);addLog(pend.name+' נרשם','info')}else addLog(pend.name+' עדכן סיסמא','info');
+  var wasMaintenance=pend._maintenance||false;
+  if(pend._new){delete pend._new;delete pend._maintenance;if(!pend.id)pend.id='u_'+Date.now();users.push(pend);addLog(pend.name+' נרשם','info');}
+  else{delete pend._maintenance;addLog(pend.name+' עדכן סיסמא','info');}
   DB.saveUser(pend);
+  if(wasMaintenance){
+    // registered during maintenance — show message and go to login
+    cu=null;pend=null;g('pwNew').value='';g('pwConf').value='';
+    sv('vLogin');
+    setTimeout(function(){se(null,'lErr','נרשמת בהצלחה! המערכת בתחזוקה כרגע, נסה להיכנס מאוחר יותר.');},100);
+    return;
+  }
   cu=pend;pend=null;g('pwNew').value='';g('pwConf').value='';afterAuth();
 }
 function afterAuth(){
   if(isA(cu)){
-    // מצב תחזוקה — בדוק אם מנהל אחר כבר פעיל
     if(_sysMode==='maintenance'&&_maintenanceAdmin&&_maintenanceAdmin!==cu.email){
       var activeAdminName=_maintenanceAdmin;
       var u=users.find(function(u){return u.email===activeAdminName});
@@ -1091,10 +1118,9 @@ function afterAuth(){
     if(cu.isSA){_maintenanceAdmin=cu.email;enterAdmin();return;}
     g('modalName').textContent=cu.name;g('roleModal').classList.add('on');
   }else{
-    // משתמש רגיל — בדוק מצב תחזוקה
     if(_sysMode==='maintenance'){
       se(null,'lErr','המערכת במצב תחזוקה. נא לנסות מאוחר יותר.');
-      cu=null;return;
+      cu=null;sv('vLogin');return;
     }
     setUserStatus(cu,'active');enterUser();
   }
@@ -1162,7 +1188,7 @@ function delAccount(){var em=cu.email;bookings.filter(function(b){return b.user.
 function renderUserCal(){
   var cal=g('userCal');cal.innerHTML='';var dow=T.getDay();
   for(var i=0;i<dow;i++){var e=document.createElement('div');e.className='cd ce';cal.appendChild(e)}
-  for(var i=0;i<14;i++){
+  for(var i=0;i<(cfg.bookingDays||14);i++){
     var d=new Date(T);d.setDate(d.getDate()+i);var dstr=ds(d);
     var dayWins=getDayWins(dstr);
     var active=(cfg.days.includes(d.getDay())||!!(dayWinsDB[dstr]&&dayWinsDB[dstr].length>0))&&dayWins.length>0;
@@ -1314,7 +1340,6 @@ function sortWl(list){return list.sort(function(a,b){var aH=bookings.some(functi
 function promote(dstr,wid){var sd=slotsDB[sk(dstr,wid)];if(!sd||!sd.wl.length)return;var go=true;while(go){go=false;var free=sd.cap-tc(sd);if(!sd.wl.length||free<=0)break;var first=sd.wl[0];if(first.cnt<=free){sd.wl.shift();sd.bk.push(first);var wi=wlist.findIndex(function(w){return w.id===first.id});if(wi>=0)wlist.splice(wi,1);bookings.push(Object.assign({},first,{status:'ok'}));addLog(first.user.name+' \u05d4\u05d5\u05e2\u05dc\u05d4 \u05de\u05d4\u05de\u05ea\u05e0\u05d4','ok');go=true}else break}}
 
 function switchTab(n){
-  cancelDayEdit();
   [0,1,2,3,4,5].forEach(function(i){
     var t=g('tab'+i);var p=g('tp'+i);
     if(t)t.classList.toggle('on',i===n);
@@ -1322,7 +1347,7 @@ function switchTab(n){
   });
   if(n===0)renderOverview();
   if(n===1)renderAdminCal();
-  if(n===2){_savedWeekDayWins=JSON.parse(JSON.stringify(weekDayWins));renderSettings();}
+  if(n===2){if(!_savedWeekDayWins)_savedWeekDayWins=JSON.parse(JSON.stringify(weekDayWins));renderSettings();}
   if(n===3)renderAdminUsers();
   if(n===4)renderConst();
   if(n===5)renderReports();
@@ -1333,6 +1358,7 @@ function renderConst(){
   g('setDefCap').value=cfg.defCap;
   g('setDefDur').value=cfg.defDur;
   var mw=g('setMaxWl');if(mw)mw.value=cfg.maxWl;
+  var bd=g('setBookingDays');if(bd)bd.value=cfg.bookingDays||14;
   var st=g('setSessionTimeout');if(st)st.value=cfg.sessionTimeout||0;
   var wp=g('setWarningPercent');if(wp)wp.value=cfg.warningPercent||80;
   var dm=g('setDebugMode');if(dm)dm.checked=cfg.debugMode||false;
@@ -1539,7 +1565,7 @@ function renderOverview(){
   g('aAact').textContent=actAdmins.length;
   // חלונות ביקור — 14 יום קרובים
   var wtot=0,wbk=0,wfu=0,wwl=0;
-  for(var i=0;i<14;i++){
+  for(var i=0;i<(cfg.bookingDays||14);i++){
     var d=new Date(T);d.setDate(d.getDate()+i);
     if(!cfg.days.includes(d.getDay()))continue;
     var dstr=ds(d);
@@ -1571,7 +1597,7 @@ function renderLog(){
   var hasMore=lg.length>start+_logPer;
   var wrap=g('logNextWrap');if(wrap)wrap.style.display=hasMore?'block':'none';
 }
-function renderAdminCal(){var sf2=T.toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});g('calHdr').textContent='\u05de\u05e6\u05d1 \u05d9\u05d5\u05de\u05df \u2014 \u05e9\u05d1\u05d5\u05e2\u05d9\u05d9\u05dd \u05e7\u05e8\u05d5\u05d1\u05d9\u05dd, \u05d4\u05d7\u05dc \u05de-'+sf2;var cal=g('adminCal');cal.innerHTML='';var dow=T.getDay();for(var i=0;i<dow;i++){var e=document.createElement('div');e.className='cd ce';cal.appendChild(e)}for(var i=0;i<14;i++){var d=new Date(T);d.setDate(d.getDate()+i);var dstr=ds(d);
+function renderAdminCal(){var sf2=T.toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});g('calHdr').textContent='\u05de\u05e6\u05d1 \u05d9\u05d5\u05de\u05df \u2014 \u05e9\u05d1\u05d5\u05e2\u05d9\u05d9\u05dd \u05e7\u05e8\u05d5\u05d1\u05d9\u05dd, \u05d4\u05d7\u05dc \u05de-'+sf2;var cal=g('adminCal');cal.innerHTML='';var dow=T.getDay();for(var i=0;i<dow;i++){var e=document.createElement('div');e.className='cd ce';cal.appendChild(e)}for(var i=0;i<(cfg.bookingDays||14);i++){var d=new Date(T);d.setDate(d.getDate()+i);var dstr=ds(d);
   // active = יש חלונות לפי weekDayWins או override ספציפי
   var dayWinsForDot=getDayWins(dstr);
   var active=dayWinsForDot.length>0;
@@ -1587,12 +1613,9 @@ function renderAdminCal(){var sf2=T.toLocaleDateString('he-IL',{day:'numeric',mo
 var _dayDstr=null,_dayPending={};
 
 function getDayWins(dstr){
-  // 1. per-day override (admin edited this specific date)
   if(dayWinsDB[dstr])return dayWinsDB[dstr].slice();
-  // 2. per day-of-week defaults
   var dow=pd(dstr).getDay();
-  if(weekDayWins[dow])return weekDayWins[dow].slice();
-  // 3. global cfg fallback
+  if(weekDayWins[dow])return weekDayWins[dow].filter(function(w){return!w._pending;}).slice();
   return cfg.wins.slice();
 }
 
@@ -1678,21 +1701,39 @@ function renderDaySlots(dstr){
 
 // Build quarter-hour 24h time options into a <select> element
 function buildTimeSelect(selEl, val){
+  // Build hour select
   selEl.innerHTML='';
+  var parts=val?val.split(':'):['09','00'];
+  var hVal=parts[0];
   for(var h=0;h<24;h++){
-    [0,15,30,45].forEach(function(m){
-      var str=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-      var opt=document.createElement('option');opt.value=str;opt.textContent=str;
-      if(str===val)opt.selected=true;
-      selEl.appendChild(opt);
-    });
+    var str=String(h).padStart(2,'0');
+    var opt=document.createElement('option');opt.value=str;opt.textContent=str;
+    if(str===hVal)opt.selected=true;
+    selEl.appendChild(opt);
   }
+}
+function buildMinSelect(selEl, val){
+  selEl.innerHTML='';
+  var parts=val?val.split(':'):['09','00'];
+  var mVal=parts[1]||'00';
+  [0,15,30,45].forEach(function(m){
+    var str=String(m).padStart(2,'0');
+    var opt=document.createElement('option');opt.value=str;opt.textContent=str;
+    if(str===mVal)opt.selected=true;
+    selEl.appendChild(opt);
+  });
+}
+function getTimeFromSelects(hId,mId){
+  var hEl=g(hId),mEl=g(mId);
+  if(!hEl||!mEl)return'00:00';
+  return hEl.value+':'+mEl.value;
 }
 
 function addDayWindow(){
   if(!_dayDstr)return;
   var f=g('addWinForm');if(f)f.style.display='block';
-  var ti=g('newWinTime');if(ti)buildTimeSelect(ti,'09:00');
+  var th=g('newWinTimeH');if(th)buildTimeSelect(th,'09:00');
+  var tm=g('newWinTimeM');if(tm)buildMinSelect(tm,'09:00');
   var ci=g('newWinCap');if(ci)ci.value=String(cfg.defCap);
 }
 
@@ -1749,7 +1790,10 @@ function sortWins(){cfg.wins.sort(function(a,b){return a.start.localeCompare(b.s
 var _activeDow=0;
 var _applyDays=cfg.days.slice();
 var _savedWeekDayWins=null; // snapshot for cancel
-function showSettingsIndicator(){var si=g('settingsEditIndicator');if(si)si.style.display='block';}
+function showSettingsIndicator(){
+  var si=g('settingsEditIndicator');if(si)si.style.display='block';
+  setTabDirty(2,true);
+}
 function renderSettings(){
   var grid=g('wdayGrid');grid.innerHTML='';
   [0,1,2,3,4,5,6].forEach(function(dow){
@@ -1762,6 +1806,17 @@ function renderSettings(){
       +'<span style="font-size:11px;color:var(--txt3);flex:1">'+wStr+'</span>'
       +'<button class="bsm '+(isActive?'':'gh')+'" id="dowBtn_'+dow+'" style="font-size:10px;padding:3px 8px">'+(isActive?'עורך':'בחר')+'</button>';
     row.querySelector('#dowBtn_'+dow).addEventListener('click',function(){
+      if(_activeDow===dow)return;
+      // check if current day has unsaved changes vs snapshot
+      var si=g('settingsEditIndicator');
+      if(si&&si.style.display==='block'){
+        if(!confirm('יש שינויים לא שמורים ליום '+DN[_activeDow]+'. לבטל ולעבור ליום '+DN[dow]+'?'))return;
+        // restore current day from snapshot
+        if(_savedWeekDayWins&&_savedWeekDayWins[_activeDow]){
+          weekDayWins[_activeDow]=JSON.parse(JSON.stringify(_savedWeekDayWins[_activeDow]));
+        }
+        si.style.display='none';
+      }
       _activeDow=dow;renderSettings();
     });
     grid.appendChild(row);
@@ -1796,30 +1851,36 @@ function renderTwins(){
     var row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--brd)';
     // Build row via createElement to avoid HTML parser issues with select tags
-    var sel=document.createElement('select');sel.id='twT_'+i;sel.className='fi';sel.dir='ltr';sel.style.cssText='width:72px;flex-shrink:0';
+    var sel=document.createElement('select');sel.id='twT_'+i;sel.className='fi';sel.dir='ltr';sel.style.cssText='width:52px;flex-shrink:0';
+    var selM=document.createElement('select');selM.id='twTm_'+i;selM.className='fi';selM.dir='ltr';selM.style.cssText='width:48px;flex-shrink:0';
     var inpD=document.createElement('input');inpD.type='number';inpD.id='twD_'+i;inpD.min='15';inpD.max='240';inpD.value=String(w.dur||cfg.defDur);inpD.className='fi';inpD.style.cssText='width:62px;flex-shrink:0';
     var inpC=document.createElement('input');inpC.type='number';inpC.id='twC_'+i;inpC.min='1';inpC.max='30';inpC.value=String(w.cap);inpC.className='fi';inpC.style.cssText='width:50px;flex-shrink:0';
     var inpW=document.createElement('input');inpW.type='number';inpW.id='twW_'+i;inpW.min='0';inpW.max='20';inpW.value=String(w.maxWl!=null?w.maxWl:cfg.maxWl);inpW.className='fi';inpW.style.cssText='width:50px;flex-shrink:0';inpW.title='מקסימום ממתינים';
     var btnRm=document.createElement('button');btnRm.id='rmTw_'+i;btnRm.className='bsm gh';btnRm.style.cssText='font-size:10px;padding:3px 7px;flex-shrink:0';btnRm.textContent='✕';
-    row.appendChild(sel);row.appendChild(inpD);row.appendChild(inpC);row.appendChild(inpW);row.appendChild(btnRm);
+    row.appendChild(sel);row.appendChild(selM);row.appendChild(inpD);row.appendChild(inpC);row.appendChild(inpW);row.appendChild(btnRm);
     el.appendChild(row);
     var tSel=g('twT_'+i);if(tSel)buildTimeSelect(tSel,w.start);
+    var tSelM=g('twTm_'+i);if(tSelM)buildMinSelect(tSelM,w.start);
     (function(idx){
-      var rm=g('rmTw_'+idx);if(rm)rm.addEventListener('click',function(){lockScreen();wins.splice(idx,1);renderTwins();renderSettings();});
-      var ti=g('twT_'+idx);if(ti)ti.addEventListener('change',function(){lockScreen();wins[idx].start=this.value;sortWinsArr(wins);renderTwins();});
-      var ci=g('twC_'+idx);if(ci)ci.addEventListener('change',function(){lockScreen();wins[idx].cap=parseInt(this.value)||cfg.defCap;});
-      var di=g('twD_'+idx);if(di)di.addEventListener('change',function(){lockScreen();wins[idx].dur=parseInt(this.value)||cfg.defDur;});
-      var wi2=g('twW_'+idx);if(wi2)wi2.addEventListener('change',function(){lockScreen();wins[idx].maxWl=parseInt(this.value);if(isNaN(wins[idx].maxWl))wins[idx].maxWl=cfg.maxWl;});
+      var rm=g('rmTw_'+idx);if(rm)rm.addEventListener('click',function(){lockScreen();wins.splice(idx,1);renderTwins();renderSettings();showSettingsIndicator();});
+      var ti=g('twT_'+idx);var tim=g('twTm_'+idx);
+      function onTimeChange(){lockScreen();wins[idx].start=getTimeFromSelects('twT_'+idx,'twTm_'+idx);sortWinsArr(wins);renderTwins();showSettingsIndicator();}
+      if(ti)ti.addEventListener('change',onTimeChange);
+      if(tim)tim.addEventListener('change',onTimeChange);
+      var ci=g('twC_'+idx);if(ci)ci.addEventListener('change',function(){lockScreen();wins[idx].cap=parseInt(this.value)||cfg.defCap;showSettingsIndicator();});
+      var di=g('twD_'+idx);if(di)di.addEventListener('change',function(){lockScreen();wins[idx].dur=parseInt(this.value)||cfg.defDur;showSettingsIndicator();});
+      var wi2=g('twW_'+idx);if(wi2)wi2.addEventListener('change',function(){lockScreen();wins[idx].maxWl=parseInt(this.value);if(isNaN(wins[idx].maxWl))wins[idx].maxWl=cfg.maxWl;showSettingsIndicator();});
     })(i);
   });
   // כותרות עמודות
   if(wins.length>0){
     var hdr=document.createElement('div');
     hdr.style.cssText='display:flex;gap:6px;padding:0 0 4px;border-bottom:1px solid var(--brd2)';
-    hdr.innerHTML='<span style="width:72px;font-size:10px;color:var(--txt3);flex-shrink:0">שעת התחלה</span>'
-      +'<span style="width:62px;font-size:10px;color:var(--txt3);flex-shrink:0">משך<br>(דק\')</span>'
-      +'<span style="width:50px;font-size:10px;color:var(--txt3);flex-shrink:0">מבקרים<br>מותר</span>'
-      +'<span style="width:50px;font-size:10px;color:var(--txt3);flex-shrink:0">ממתינים<br>מותר</span>'
+    hdr.innerHTML='<span style="width:52px;font-size:10px;color:var(--txt3);flex-shrink:0">שעה</span>'
+      +'<span style="width:48px;font-size:10px;color:var(--txt3);flex-shrink:0">דקות</span>'
+      +'<span style="width:62px;font-size:10px;color:var(--txt3);flex-shrink:0">משך (דק\')</span>'
+      +'<span style="width:50px;font-size:10px;color:var(--txt3);flex-shrink:0">מבקרים</span>'
+      +'<span style="width:50px;font-size:10px;color:var(--txt3);flex-shrink:0">ממתינים</span>'
       +'<span style="width:30px;font-size:10px;color:var(--txt3);flex-shrink:0;text-align:center">מחק</span>';
     el.insertBefore(hdr,el.firstChild);
   }
@@ -1855,7 +1916,7 @@ function applySettings(updateFuture){
       weekDayWins[_activeDow]=prevWDW[_activeDow];
     }
     // סנכרן slotsDB לימים שנבחרו
-    for(var i=0;i<14;i++){
+    for(var i=0;i<(cfg.bookingDays||14);i++){
       var d=new Date(T);d.setDate(d.getDate()+i);
       var dstr2=ds(d),dow2=d.getDay();
       if(!ps.days.includes(dow2))continue; // רק ימים שנבחרו להחלה
@@ -1886,8 +1947,17 @@ function applySettings(updateFuture){
   }
   _pendingSettings=null;
   _settingsChanged=true;
+  _savedWeekDayWins=null;
+  // clear pending flags from all weekDayWins
+  Object.keys(weekDayWins).forEach(function(dow){
+    weekDayWins[dow]=weekDayWins[dow].map(function(w){
+      var wc=Object.assign({},w);delete wc._pending;return wc;
+    });
+  });
   DB.saveCfg();
   DB.saveWeekDayWins();
+  setTabDirty(2,false);
+  var si=g('settingsEditIndicator');if(si)si.style.display='none';
   var ub=g('btnUpdateCal');if(ub)ub.style.display='block';
   upSub();renderAdminCal();renderOverview();renderSettings();unlockScreen();
   var s=g('setOk');s.textContent='ההגדרות נשמרו.';s.className='fl2 ok on';setTimeout(function(){s.classList.remove('on')},3000);
@@ -1976,7 +2046,7 @@ function openAdminUserEdit(email){
   g('aUsersListView').style.display='none';g('aUserEditPanel').style.display='block';var _rz=g('resetUsersZone');if(_rz)_rz.style.display='none';
 }
 function saveAdminUserEdit(){
-  var n=g('auName').value.trim(),p=g('auPhone').value.trim(),e=g('auEmail').value.trim(),ok=true;
+  var n=g('auName').value.trim(),p=g('auPhone').value.trim(),e=g('auEmail').value.trim().toLowerCase(),ok=true;
   document.querySelectorAll('#tp3 .fe').forEach(function(x){x.classList.remove('on')});
   document.querySelectorAll('#tp3 .fi').forEach(function(x){x.classList.remove('er')});
   if(!n||n.length<2){g('auName').classList.add('er');g('auNameErr').classList.add('on');ok=false}
@@ -2031,7 +2101,7 @@ function rmUser(email){
   renderAdminUsers();renderOverview();
 }
 
-var APP_VERSION='v25.24';
+var APP_VERSION='v25.25';
 function openSAEdit(){
   g('saEmailDisplay').textContent=sa.email;
   g('saEmail').value=sa.email;
@@ -2044,7 +2114,7 @@ function openSAEdit(){
   g('aSAEditPanel').style.display='block';var _rz=g('resetUsersZone');if(_rz)_rz.style.display='none';
 }
 function saveSAEdit(){
-  var e=g('saEmail').value.trim();
+  var e=g('saEmail').value.trim().toLowerCase();
   g('saEmailErr').classList.remove('on');g('saEmail').classList.remove('er');
   if(!e.includes('@')||!e.includes('.')){g('saEmail').classList.add('er');g('saEmailErr').classList.add('on');return;}
   if(e===sa.email){var f=g('saFlash');f.textContent='האימייל זהה לנוכחי.';f.className='fl2 in on';setTimeout(function(){f.classList.remove('on');},2000);return;}
@@ -2077,7 +2147,7 @@ function doResetDB(){
 function doUpdateCal(){
   if(!_prevWeekDayWins)return;
   var updated=0;
-  for(var i=0;i<14;i++){
+  for(var i=0;i<(cfg.bookingDays||14);i++){
     var d=new Date(T);d.setDate(d.getDate()+i);
     var dstr=ds(d),dow=d.getDay();
     if(dayWinsDB[dstr])continue; // override ידני — לא נוגעים
@@ -2135,7 +2205,7 @@ function openNewUser(){
 
 }
 function saveNewUser(){
-  var n=g('nuName').value.trim(),p=g('nuPhone').value.trim(),e=g('nuEmail').value.trim(),pw=g('nuPw').value,conf=g('nuPwConf').value;
+  var n=g('nuName').value.trim(),p=g('nuPhone').value.trim(),e=g('nuEmail').value.trim().toLowerCase(),pw=g('nuPw').value,conf=g('nuPwConf').value;
   document.querySelectorAll('#aUserNewPanel .fe').forEach(function(x){x.classList.remove('on')});
   document.querySelectorAll('#aUserNewPanel .fi').forEach(function(x){x.classList.remove('er')});
   var ok=true;
@@ -2192,9 +2262,9 @@ g('btnRoleAdmin').addEventListener('click',function(){
 });
 g('btnForgotOk').addEventListener('click',function(){g('forgotModal').classList.remove('on')});
 g('btnAddTw').addEventListener('click',function(){
-  lockScreen();
+  showSettingsIndicator();
   if(!weekDayWins[_activeDow])weekDayWins[_activeDow]=[];
-  weekDayWins[_activeDow].push({id:'wd'+_activeDow+'_'+Date.now(),start:'09:00',cap:cfg.defCap,dur:cfg.defDur});
+  weekDayWins[_activeDow].push({id:'wd'+_activeDow+'_'+Date.now(),start:'09:00',cap:cfg.defCap,dur:cfg.defDur,_pending:true});
   sortWinsArr(weekDayWins[_activeDow]);
   renderTwins();renderSettings();
 });
@@ -2216,6 +2286,7 @@ g('btnSaveConst').addEventListener('click',function(){
   cfg.defCap=parseInt(g('setDefCap').value)||4;
   cfg.defDur=parseInt(g('setDefDur').value)||90;
   cfg.maxWl=parseInt(g('setMaxWl').value);if(isNaN(cfg.maxWl)||cfg.maxWl<0)cfg.maxWl=4;
+  cfg.bookingDays=Math.min(31,Math.max(7,parseInt(g('setBookingDays').value)||14));
   cfg.sessionTimeout=parseInt(g('setSessionTimeout').value)||0;
   cfg.warningPercent=parseInt(g('setWarningPercent').value)||80;
   cfg.debugMode=g('setDebugMode')?g('setDebugMode').checked:false;
@@ -2236,8 +2307,8 @@ g('btnDayCancel').addEventListener('click',cancelDayEdit);
 g('btnDayAddTw').addEventListener('click',addDayWindow);
 g('btnAddWinConfirm').addEventListener('click',function(){
   if(!_dayDstr)return;
-  var ti=g('newWinTime'),ci=g('newWinCap');
-  var timeStr=ti?ti.value:'09:00';
+  var th=g('newWinTimeH'),tm=g('newWinTimeM'),ci=g('newWinCap');
+  var timeStr=getTimeFromSelects('newWinTimeH','newWinTimeM');
   var cap=ci?Math.max(1,parseInt(ci.value)||cfg.defCap):cfg.defCap;
   if(!timeStr)return;
   var newId='dn_'+Date.now();
@@ -2257,7 +2328,7 @@ wireEye('btnEyeNuConf','nuPwConf');
 g('btnAddUser').addEventListener('click',openNewUser);
 g('btnNewUserBack').addEventListener('click',function(){renderAdminUsers()});
 g('btnNewUserCancel').addEventListener('click',function(){renderAdminUsers()});
-g('btnSaveNewUser').addEventListener('click',saveNewUser);
+g('btnSaveNewUser').addEventListener('click',saveNewUser);g('btnAddAnotherUser').addEventListener('click',openNewUser);
 g('nuPw').addEventListener('input',function(){pwStr('nuPw',['nuPb0','nuPb1','nuPb2','nuPb3'],'nuPwHint')});
 g('btnSysMode').addEventListener('click',toggleSysMode);
 g('btnMaintenanceOut').addEventListener('click',logout);
