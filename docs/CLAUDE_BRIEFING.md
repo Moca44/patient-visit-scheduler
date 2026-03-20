@@ -236,8 +236,9 @@ Requirements: 8+ chars, uppercase, lowercase, special character.
 
 ## DEBUG ENVIRONMENT
 
-Minimum 4 browser windows/tabs needed:
+Minimum 5 browser windows/tabs needed:
 1. **Claude** — code changes and debugging
 2. **GitHub** — upload index.html, manage /docs
 3. **Supabase** — Table Editor, SQL Editor, check data
 4. **App** — https://moca44.github.io/patient-visit-scheduler/
+5. **Download** - Temporary storage, renaming to index.html
