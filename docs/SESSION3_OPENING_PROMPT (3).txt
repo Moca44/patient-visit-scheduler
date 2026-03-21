@@ -1,0 +1,71 @@
+EMPATHY SCHEDULER — SESSION 3 OPENING PROMPT
+============================================
+Paste this at the start of Session 3 AFTER uploading all documents.
+
+------------------------------------------------------------
+This is Session 3 (R0.S3). Please read all uploaded documents
+including SCRIPTS-R0.S3.2.md and FILE_LIST-R0.S3.2.docx.
+
+STEP 1 — VERIFY FILES:
+Verify that the uploaded files match the list in FILE_LIST-R0.S3.2.docx.
+Report any missing or mismatched files before starting work.
+
+STEP 2 — GENERATE SUMMARY:
+After confirming all documents, generate a structured summary of everything
+you received and understood, including:
+- Session number and version
+- App version and status
+- Doc version
+- Key conventions and rules in effect
+- Pending tasks (Group A bugs first)
+- Any open decisions carried over from Session 2
+
+The user will paste this summary back to Session 2 for cross-verification
+before starting development work.
+
+STEP 3 — CONFIRM AND START:
+After summary is verified by user, confirm:
+- Session number: 3 (R0.S3)
+- App version: D-0.25.27 (untested)
+- Last tested stable: D-0.25.24
+- Doc version: R0.S3.0
+- Will respond in English
+- Ready to start with Group A bugs
+
+Additional memory to restore:
+— File naming convention: FILENAME-R[release].S[session].[docversion].ext
+— Archive structure: DOC_INDEX open + ARCHIVE ZIP in /docs/archive/R0.SX/
+— HTML version naming: to be decided this session
+— SCRIPTS update needed: add GitHub /docs cleanup step before upload
+  (delete all old files from /docs except README before uploading new version)
+— SCRIPTS update needed: add location verification step before any GitHub upload:
+    1. User navigates to target GitHub folder
+    2. Creates temp file _CHECK.txt in that folder
+    3. Pastes the GitHub link to Claude for verification
+    4. If location correct — proceed with upload
+    5. Reminder to delete _CHECK.txt after upload complete
+— Feedback to Anthropic: comprehensive document + Fin AI response — pending
+— ZIP download: Claude downloads as generic filename — rename immediately
+  to ARCHIVE-R0.SX.zip before uploading to GitHub archive folder
+— Documentation process: initiated in Session 2 — see DOCUMENTATION_PROMPT-R0.S3.0.txt
+  Next step: run GEMINI_PROMPT-R0.S3.0.txt through Gemini to get NotebookLM prompt
+
+Respond in English.
+------------------------------------------------------------
+
+DOCUMENTS TO UPLOAD AT SESSION START (in order):
+1. CLAUDE_BRIEFING-R0.S3.0.md
+2. PENDING_ITEMS_v25_27-R0.S3.0.docx (or PENDING_ITEMS-R0.S3.0.md)
+3. SCRIPTS-R0.S3.2.md
+4. FILE_LIST-R0.S3.2.docx
+5. DOCUMENTATION_PROMPT-R0.S3.0.txt
+
+FIRST TASKS SESSION 3:
+- Verify uploaded files match FILE_LIST
+- Generate and send summary back to Session 2 for verification
+- Run SQL from PENDING_ITEMS before coding
+- Start with Group A bugs
+- Decide on HTML version naming (R suffix yes/no)
+- Update SCRIPTS with /docs cleanup step
+- Update SCRIPTS with location verification step (_CHECK.txt method)
+- Documentation process: continue when development tasks allow
