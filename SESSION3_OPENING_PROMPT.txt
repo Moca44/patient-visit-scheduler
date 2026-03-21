@@ -1,0 +1,33 @@
+EMPATHY SCHEDULER — SESSION 3 OPENING PROMPT
+============================================
+Paste this at the start of Session 3 AFTER uploading all documents.
+
+------------------------------------------------------------
+This is Session 3 (R0.S3). Please read all uploaded documents
+including SCRIPTS-R0.S3.2.md.
+
+Confirm: session number, app version, doc version, and first task.
+
+Additional memory to restore:
+— File naming convention: FILENAME-R[release].S[session].[docversion].ext
+— Archive structure: DOC_INDEX open + ARCHIVE ZIP in /docs/archive/R0.SX/
+— HTML version naming: to be decided this session
+— SCRIPTS update needed: add GitHub /docs cleanup step before upload
+  (delete all old files from /docs except README before uploading new version)
+— Feedback to Anthropic: comprehensive document + Fin AI response — pending
+— ZIP download: Claude downloads as generic filename — rename immediately
+  to ARCHIVE-R0.SX.zip before uploading to GitHub archive folder
+
+Respond in English.
+------------------------------------------------------------
+
+DOCUMENTS TO UPLOAD AT SESSION START (in order):
+1. CLAUDE_BRIEFING-R0.S3.0.md
+2. PENDING_ITEMS_v25_27-R0.S3.0.docx (or PENDING_ITEMS-R0.S3.0.md)
+3. SCRIPTS-R0.S3.2.md
+
+FIRST TASKS SESSION 3:
+- Run SQL from PENDING_ITEMS before coding
+- Start with Group A bugs
+- Decide on HTML version naming (R suffix yes/no)
+- Update SCRIPTS with /docs cleanup step
